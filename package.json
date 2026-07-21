@@ -1,6 +1,6 @@
 {
   "name": "sluglist",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Universal embeddable feedback widget: capture visual feedback (element, area, full page) on dev and staging sites, annotate it, and deliver artifacts through pluggable connectors.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "jsdom": "^29.1.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",

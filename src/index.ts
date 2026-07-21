@@ -35,7 +35,19 @@ export type {
   MountedFeedbackWidget,
 } from "./ui/mount";
 export { mountFeedbackWidget } from "./ui/mount";
-export { computeCssSelector } from "./ui/selector";
+export {
+  collectElementMetadata,
+  domPath,
+  generateSelector,
+  isHashLike,
+  isUtilityClass,
+  screenOf,
+} from "./selector";
+export type {
+  ElementMetadata,
+  SelectorResult,
+  SelectorStrategy,
+} from "./selector";
 export type { FeedbackWidgetStrings } from "./ui/strings";
 export type {
   CreateFeedbackWidgetOptions,

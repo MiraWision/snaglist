@@ -43,13 +43,23 @@ export interface CaptureIssueInput {
   comment: string;
   /** Recent console errors to append as a "## Console errors" section. */
   consoleErrors?: string[];
+  /** Full tag path with no classes (element mode). */
+  domPath?: string | null;
+  /** innerText of the element, trimmed (element mode). */
+  elementText?: string | null;
   mode: CaptureMode;
+  /** Nearest data-screen | data-page ancestor value (element mode). */
+  screen?: string | null;
   /** PNG screenshot, optional (an issue may have none). */
   screenshot?: Blob | null;
   /** Additional PNG screenshots for the same issue (additive to `screenshot`). */
   screenshots?: Blob[];
   /** CSS selector for element mode; null for fullpage / area. */
   selector?: string | null;
+  /** How the selector was derived: "testid" | "id" | "aria" | "path". */
+  selectorStrategy?: string | null;
+  /** Whether the selector resolved to exactly one element at capture time. */
+  selectorUnique?: boolean | null;
 }
 
 export interface IssueIndexEntry {
@@ -58,6 +68,8 @@ export interface IssueIndexEntry {
   created_at: string;
   /** Markdown file name, e.g. "01-broken-header.md". */
   file: string;
+  /** Nearest data-screen | data-page value for grouping; emitted when set. */
+  screen?: string | null;
   /** Zero-padded issue number within the session, e.g. "01". */
   id: string;
   /** First PNG file name or null (kept for parser compatibility). */

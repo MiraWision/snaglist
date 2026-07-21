@@ -172,6 +172,55 @@ describe("buildIssueMarkdown", () => {
     expect(enriched.reduced_motion).toBe(false);
   });
 
+  it("emits smart-selector metadata in frontmatter for element mode", () => {
+    const md = buildIssueMarkdown({
+      id: "07",
+      url: "/checkout",
+      selector: 'button[aria-label="Save"]',
+      selectorStrategy: "aria",
+      selectorUnique: true,
+      mode: "element",
+      elementText: "Сохранить",
+      domPath: "body > div > main > form > div > button",
+      screen: "checkout",
+      viewport: "1512x982",
+      screenshot: "07-x.png",
+      createdAt: "2026-07-21T10:00:00Z",
+      comment: "The save button is off",
+    });
+    const fm = parse(md.split("---\n")[1]);
+    expect(fm.selector).toBe('button[aria-label="Save"]');
+    expect(fm.selector_strategy).toBe("aria");
+    expect(fm.selector_unique).toBe(true);
+    expect(fm.element_text).toBe("Сохранить");
+    expect(fm.dom_path).toBe("body > div > main > form > div > button");
+    expect(fm.screen).toBe("checkout");
+  });
+
+  it("emits the metadata fields as null for non-element modes", () => {
+    const md = buildIssueMarkdown({
+      id: "08",
+      url: "/x",
+      selector: null,
+      selectorStrategy: null,
+      selectorUnique: null,
+      mode: "fullpage",
+      elementText: null,
+      domPath: null,
+      screen: null,
+      viewport: "800x600",
+      screenshot: null,
+      createdAt: "2026-07-21T10:00:00Z",
+      comment: "Whole page",
+    });
+    const fm = parse(md.split("---\n")[1]);
+    expect(fm.selector).toBeNull();
+    expect(fm.selector_strategy).toBeNull();
+    expect(fm.element_text).toBeNull();
+    expect(fm.dom_path).toBeNull();
+    expect(fm.screen).toBeNull();
+  });
+
   it("emits an issue category only when set", () => {
     const withCategory = parse(
       buildIssueMarkdown({

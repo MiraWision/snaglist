@@ -188,6 +188,7 @@ export function createFeedbackWidget(
       screenshot: pngPaths[0] ?? null,
       ...(pngPaths.length > 1 ? { screenshots: pngPaths } : {}),
       ...(input.category ? { category: input.category } : {}),
+      ...(input.screen ? { screen: input.screen } : {}),
       url: env.url,
       selector: input.selector ?? null,
       created_at: createdAt,
@@ -208,6 +209,19 @@ export function createFeedbackWidget(
         screenshot: pngPaths[0] ?? null,
         ...(pngPaths.length > 1 ? { screenshots: pngPaths } : {}),
         ...(input.category ? { category: input.category } : {}),
+        // Element metadata: forwarded when the UI provides it (element mode
+        // passes values; other modes pass null so the fields are present).
+        ...(input.selectorStrategy !== undefined
+          ? { selectorStrategy: input.selectorStrategy }
+          : {}),
+        ...(input.selectorUnique !== undefined
+          ? { selectorUnique: input.selectorUnique }
+          : {}),
+        ...(input.elementText !== undefined
+          ? { elementText: input.elementText }
+          : {}),
+        ...(input.domPath !== undefined ? { domPath: input.domPath } : {}),
+        ...(input.screen !== undefined ? { screen: input.screen } : {}),
         createdAt,
         comment,
         consoleErrors: input.consoleErrors,

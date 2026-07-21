@@ -6,7 +6,10 @@ import {
   type ConsoleErrorBuffer,
   installConsoleErrorBuffer,
 } from "./console-buffer";
-import { computeCssSelector } from "./selector";
+import {
+  collectElementMetadata,
+  type ElementMetadata,
+} from "../selector";
 import {
   DEFAULT_STRINGS,
   type FeedbackWidgetStrings,
@@ -54,6 +57,7 @@ interface Draft {
   category: string | null;
   comment: string;
   mode: CaptureMode;
+  meta: ElementMetadata | null;
   selector: string | null;
   shots: Blob[];
   urls: string[];
@@ -465,7 +469,7 @@ export function mountFeedbackWidget(
   function openDraft(
     mode: CaptureMode,
     shot: Blob | null,
-    selector: string | null
+    meta: ElementMetadata | null
   ): void {
     if (addingToDraft && draft) {
       addShot(shot);
@@ -474,7 +478,8 @@ export function mountFeedbackWidget(
     discardDraft();
     draft = {
       mode,
-      selector,
+      meta,
+      selector: meta?.selector ?? null,
       shots: shot ? [shot] : [],
       urls: shot ? [URL.createObjectURL(shot)] : [],
       comment: "",
@@ -526,12 +531,14 @@ export function mountFeedbackWidget(
     if (!(target instanceof HTMLElement)) {
       return;
     }
-    const selector = computeCssSelector(target);
+    // Collect selector + metadata synchronously, before the capture (which
+    // reveals scroll-hidden nodes and could otherwise perturb the DOM).
+    const meta = collectElementMetadata(target);
     const shot = await runCapture(() => captureElement(target));
     if (captureCancelled) {
       return;
     }
-    openDraft("element", shot, selector);
+    openDraft("element", shot, meta);
   }
 
   function startElementMode(): void {
@@ -663,12 +670,20 @@ export function mountFeedbackWidget(
     sendBtn.disabled = true;
     const current = draft;
     try {
+      const meta = current.meta;
       const result = await core.captureIssue({
         comment,
         screenshots: current.shots,
         selector: current.selector,
         mode: current.mode,
         ...(current.category ? { category: current.category } : {}),
+        // Present for every mode (null when not element) so the artifact fields
+        // are always there.
+        selectorStrategy: meta?.selectorStrategy ?? null,
+        selectorUnique: meta?.selectorUnique ?? null,
+        elementText: meta?.elementText ?? null,
+        domPath: meta?.domPath ?? null,
+        screen: meta?.screen ?? null,
         consoleErrors: errors.snapshot(),
       });
       closePanel();

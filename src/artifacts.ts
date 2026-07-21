@@ -68,6 +68,11 @@ function issueEntries(issue: IssueIndexEntry): [string, YamlValue][] {
   if (issue.screenshots && issue.screenshots.length > 1) {
     entries.push(["screenshots", issue.screenshots]);
   }
+  // Only `screen` is added to the session index (for grouping), and only when
+  // present, so sessions without it stay byte-identical.
+  if (issue.screen) {
+    entries.push(["screen", issue.screen]);
+  }
   entries.push(
     ["url", issue.url],
     ["selector", issue.selector],
@@ -81,12 +86,17 @@ export interface IssueMarkdownInput {
   comment: string;
   consoleErrors?: string[];
   createdAt: string;
+  domPath?: string | null;
+  elementText?: string | null;
   id: string;
   mode: CaptureMode;
+  screen?: string | null;
   screenshot: string | null;
   /** All screenshot file names; emitted only when there is more than one. */
   screenshots?: string[];
   selector: string | null;
+  selectorStrategy?: string | null;
+  selectorUnique?: boolean | null;
   url: string;
   viewport: string;
 }
@@ -96,10 +106,28 @@ export function buildIssueMarkdown(input: IssueMarkdownInput): string {
     yamlLine("id", input.id),
     yamlLine("url", input.url),
     yamlLine("selector", input.selector),
-    yamlLine("mode", input.mode),
   ];
+  // Selector detail and element metadata: emitted whenever provided (the UI
+  // passes them for every mode, null for non-element), so unit fixtures that
+  // omit them stay byte-identical.
+  if (input.selectorStrategy !== undefined) {
+    lines.push(yamlLine("selector_strategy", input.selectorStrategy));
+  }
+  if (input.selectorUnique !== undefined) {
+    lines.push(yamlLine("selector_unique", input.selectorUnique));
+  }
+  lines.push(yamlLine("mode", input.mode));
   if (input.category !== undefined) {
     lines.push(yamlLine("category", input.category));
+  }
+  if (input.elementText !== undefined) {
+    lines.push(yamlLine("element_text", input.elementText));
+  }
+  if (input.domPath !== undefined) {
+    lines.push(yamlLine("dom_path", input.domPath));
+  }
+  if (input.screen !== undefined) {
+    lines.push(yamlLine("screen", input.screen));
   }
   lines.push(
     yamlLine("viewport", input.viewport),
