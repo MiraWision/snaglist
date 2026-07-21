@@ -311,20 +311,53 @@ export function widgetStyles(theme: UiTheme): string {
   border: 1px solid #d1d5db;
   background: #fff;
   border-radius: 6px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   font-size: 13px;
   color: #111;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.at-tool {
+  padding: 6px 8px;
+}
+.at-tool kbd,
+.at-btn kbd {
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1;
+  color: #9ca3af;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+  padding: 2px 4px;
 }
 .at-tool.active {
   background: ${theme.accentColor};
   border-color: ${theme.accentColor};
   color: #fff;
 }
+.at-tool.active kbd {
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.35);
+}
 .at-btn.primary {
   background: ${theme.accentColor};
   border-color: ${theme.accentColor};
   color: #fff;
+}
+.at-text-input {
+  position: fixed;
+  z-index: 2147483647;
+  min-width: 60px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.7);
+  outline: none;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 0;
+  transform: translateY(-2px);
 }
 .at-swatches {
   display: flex;

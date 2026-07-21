@@ -1,10 +1,33 @@
-import { toBlob, toCanvas } from "html-to-image";
+import type { Options } from "html-to-image/lib/types";
 
 /**
  * Screenshot capture built on DOM-to-canvas rendering (html-to-image).
  * All functions return PNG Blobs. Rendering fidelity limits (WebGL, some
  * cross-origin content) are documented in the project's RUN_EVIDENCE.
+ *
+ * html-to-image is loaded lazily on the first capture so it is not part of the
+ * widget's initial bundle (it is only needed once someone reports an issue).
  */
+
+let htiPromise: Promise<typeof import("html-to-image")> | null = null;
+
+function loadHtmlToImage(): Promise<typeof import("html-to-image")> {
+  htiPromise ??= import("html-to-image");
+  return htiPromise;
+}
+
+async function toBlob(node: HTMLElement, options: Options): Promise<Blob | null> {
+  const hti = await loadHtmlToImage();
+  return hti.toBlob(node, options);
+}
+
+async function toCanvas(
+  node: HTMLElement,
+  options: Options
+): Promise<HTMLCanvasElement> {
+  const hti = await loadHtmlToImage();
+  return hti.toCanvas(node, options);
+}
 
 export interface AreaRect {
   height: number;
@@ -129,32 +152,23 @@ async function captureFullPageInner(): Promise<Blob> {
   return blob;
 }
 
-/** Render a single element (its full bounding box) to a PNG Blob. */
+/**
+ * Render a single element to a PNG Blob by cropping its bounding box out of a
+ * full-document render. This keeps the element's real visual background
+ * (gradients, images, whatever sits behind it) instead of an isolated render
+ * on a flat colour, which loses non-solid backgrounds and can look black on a
+ * dark page.
+ */
 export function captureElement(element: HTMLElement): Promise<Blob> {
-  return withCaptureGuards(() => captureElementInner(element));
-}
-
-async function captureElementInner(element: HTMLElement): Promise<Blob> {
-  // Only inject a background when the element itself is transparent; the
-  // backgroundColor option overrides the root node's own background in
-  // html-to-image, which would repaint e.g. a red button with the page color.
-  const ownBackground = getComputedStyle(element).backgroundColor;
-  const needsBackdrop = isTransparent(ownBackground);
-  const blob = await toBlob(element, {
-    filter: shouldInclude,
-    pixelRatio: pixelRatio(),
-    // The clone root keeps the element's computed margins (e.g. mx-auto
-    // resolves to hundreds of px), which shifts content out of the canvas.
-    // The canvas is exactly the element's box, so the root needs no margin.
-    style: { margin: "0" },
-    ...(needsBackdrop
-      ? { backgroundColor: effectiveBackground(element.parentElement) }
-      : {}),
+  return withCaptureGuards(() => {
+    const r = element.getBoundingClientRect();
+    return cropFromDocument({
+      x: r.left + window.scrollX,
+      y: r.top + window.scrollY,
+      width: r.width,
+      height: r.height,
+    });
   });
-  if (!blob) {
-    throw new Error("[feedback-widget] element capture produced no image");
-  }
-  return blob;
 }
 
 /**
@@ -162,10 +176,18 @@ async function captureElementInner(element: HTMLElement): Promise<Blob> {
  * The crop accounts for the current scroll offset.
  */
 export function captureArea(rect: AreaRect): Promise<Blob> {
-  return withCaptureGuards(() => captureAreaInner(rect));
+  return withCaptureGuards(() =>
+    cropFromDocument({
+      x: rect.x + window.scrollX,
+      y: rect.y + window.scrollY,
+      width: rect.width,
+      height: rect.height,
+    })
+  );
 }
 
-async function captureAreaInner(rect: AreaRect): Promise<Blob> {
+/** Render the whole document once and crop to a document-relative rect. */
+async function cropFromDocument(docRect: AreaRect): Promise<Blob> {
   const ratio = pixelRatio();
   const target = document.documentElement;
   const canvas = await toCanvas(target, {
@@ -177,16 +199,16 @@ async function captureAreaInner(rect: AreaRect): Promise<Blob> {
   });
 
   const crop = document.createElement("canvas");
-  crop.width = Math.round(rect.width * ratio);
-  crop.height = Math.round(rect.height * ratio);
+  crop.width = Math.max(1, Math.round(docRect.width * ratio));
+  crop.height = Math.max(1, Math.round(docRect.height * ratio));
   const ctx = crop.getContext("2d");
   if (!ctx) {
     throw new Error("[feedback-widget] 2d context unavailable");
   }
   ctx.drawImage(
     canvas,
-    Math.round((rect.x + window.scrollX) * ratio),
-    Math.round((rect.y + window.scrollY) * ratio),
+    Math.round(docRect.x * ratio),
+    Math.round(docRect.y * ratio),
     crop.width,
     crop.height,
     0,

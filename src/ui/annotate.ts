@@ -1,13 +1,14 @@
 import type { FeedbackWidgetStrings } from "./strings";
 
 /**
- * Minimal annotation editor: draw arrows and boxes over a screenshot, then
- * flatten them onto the image at full resolution. Opens as an overlay inside
- * the widget's shadow root and resolves with a new Blob, or null if cancelled
- * or closed without changes. Uses pointer events so it works with touch.
+ * Minimal annotation editor: draw arrows, boxes and text over a screenshot,
+ * then flatten them onto the image at full resolution. Opens as an overlay
+ * inside the widget's shadow root and resolves with a new Blob, or null if
+ * cancelled or closed without changes. Uses pointer events so it works with
+ * touch.
  */
 
-type Tool = "arrow" | "box";
+type Tool = "arrow" | "box" | "text";
 
 interface Shape {
   color: string;
@@ -16,11 +17,25 @@ interface Shape {
   x2: number;
   y1: number;
   y2: number;
+  text?: string;
 }
 
 const COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6"];
 const LINE_WIDTH = 4;
 const ARROW_HEAD = 16;
+const FONT_SIZE = 30;
+const MAX_DIM = 2000;
+
+// Inline icons (stroke = currentColor) so the toolbar is compact and legible.
+const ICONS: Record<Tool | "undo", string> = {
+  arrow:
+    '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></svg>',
+  box: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="1.5"/></svg>',
+  text: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6V4h14v2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="9" y1="20" x2="15" y2="20"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-2"/></svg>',
+};
+
+const TOOL_KEYS: Record<string, Tool> = { a: "arrow", b: "box", t: "text" };
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -80,6 +95,11 @@ export function annotateBlob(
     let color = COLORS[0];
     let drawing: Shape | null = null;
     let dirty = false;
+    let textInput: HTMLInputElement | null = null;
+
+    function canvasScale(): number {
+      return canvas.width / img.naturalWidth || 1;
+    }
 
     function redraw(): void {
       if (!ctx) {
@@ -87,7 +107,7 @@ export function annotateBlob(
       }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const scale = canvas.width / img.naturalWidth || 1;
+      const scale = canvasScale();
       ctx.lineWidth = LINE_WIDTH * scale;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
@@ -96,21 +116,16 @@ export function annotateBlob(
         ctx.strokeStyle = s.color;
         if (s.tool === "box") {
           ctx.strokeRect(s.x1, s.y1, s.x2 - s.x1, s.y2 - s.y1);
+        } else if (s.tool === "text") {
+          ctx.fillStyle = s.color;
+          ctx.textBaseline = "top";
+          ctx.font = `600 ${FONT_SIZE * scale}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+          ctx.fillText(s.text ?? "", s.x1, s.y1);
         } else {
           drawArrow(ctx, s, scale);
         }
       }
     }
-
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") {
-        // Escape closes only the editor, not the surrounding feedback panel.
-        event.preventDefault();
-        event.stopPropagation();
-        finish(null);
-      }
-    }
-    document.addEventListener("keydown", onKeyDown, true);
 
     function finish(result: Blob | null): void {
       document.removeEventListener("keydown", onKeyDown, true);
@@ -119,6 +134,7 @@ export function annotateBlob(
     }
 
     function commit(): void {
+      commitTextInput();
       if (!(dirty && ctx)) {
         finish(null);
         return;
@@ -128,27 +144,77 @@ export function annotateBlob(
       canvas.toBlob((out) => finish(out ?? null), "image/png");
     }
 
-    function toCanvasPoint(event: PointerEvent): { x: number; y: number } {
+    function toCanvasPoint(clientX: number, clientY: number): {
+      x: number;
+      y: number;
+    } {
       const rect = canvas.getBoundingClientRect();
       const sx = canvas.width / rect.width;
       const sy = canvas.height / rect.height;
-      return {
-        x: (event.clientX - rect.left) * sx,
-        y: (event.clientY - rect.top) * sy,
-      };
+      return { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
+    }
+
+    // --- Text tool: place an inline input, commit its value as a shape. ---
+    function commitTextInput(): void {
+      if (!textInput) {
+        return;
+      }
+      const value = textInput.value.trim();
+      const { x, y } = toCanvasPoint(
+        textInput.getBoundingClientRect().left,
+        textInput.getBoundingClientRect().top
+      );
+      const active = textInput;
+      textInput = null;
+      active.remove();
+      if (value) {
+        shapes.push({ tool: "text", color, x1: x, y1: y, x2: x, y2: y, text: value });
+        dirty = true;
+        redraw();
+      }
+    }
+
+    function openTextInput(clientX: number, clientY: number): void {
+      commitTextInput();
+      const input = el("input", "at-text-input");
+      input.type = "text";
+      input.style.left = `${clientX}px`;
+      input.style.top = `${clientY}px`;
+      input.style.color = color;
+      input.style.fontSize = `${FONT_SIZE * canvasScale() * (canvas.getBoundingClientRect().width / canvas.width)}px`;
+      overlay.appendChild(input);
+      textInput = input;
+      input.focus();
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commitTextInput();
+        } else if (event.key === "Escape") {
+          // Escape here cancels only the text input, not the editor.
+          event.preventDefault();
+          event.stopPropagation();
+          const active = textInput;
+          textInput = null;
+          active?.remove();
+        }
+      });
     }
 
     canvas.addEventListener("pointerdown", (event) => {
       event.preventDefault();
+      if (tool === "text") {
+        openTextInput(event.clientX, event.clientY);
+        return;
+      }
       canvas.setPointerCapture(event.pointerId);
-      const p = toCanvasPoint(event);
+      const p = toCanvasPoint(event.clientX, event.clientY);
       drawing = { tool, color, x1: p.x, y1: p.y, x2: p.x, y2: p.y };
     });
     canvas.addEventListener("pointermove", (event) => {
       if (!drawing) {
         return;
       }
-      const p = toCanvasPoint(event);
+      const p = toCanvasPoint(event.clientX, event.clientY);
       drawing.x2 = p.x;
       drawing.y2 = p.y;
       redraw();
@@ -167,26 +233,36 @@ export function annotateBlob(
       redraw();
     });
 
-    // Toolbar: tools, colors, undo, done, cancel.
-    function toolButton(label: string, value: Tool): HTMLButtonElement {
-      const button = el(
-        "button",
-        value === tool ? "at-tool active" : "at-tool"
-      );
+    // --- Toolbar ---
+    function selectTool(value: Tool): void {
+      commitTextInput();
+      tool = value;
+      canvas.style.cursor = value === "text" ? "text" : "crosshair";
+      for (const b of toolbar.querySelectorAll(".at-tool")) {
+        b.classList.toggle(
+          "active",
+          (b as HTMLElement).dataset.tool === value
+        );
+      }
+    }
+
+    function toolButton(
+      value: Tool,
+      label: string,
+      key: string
+    ): HTMLButtonElement {
+      const button = el("button", value === tool ? "at-tool active" : "at-tool");
       button.type = "button";
-      button.textContent = label;
-      button.addEventListener("click", () => {
-        tool = value;
-        for (const b of toolbar.querySelectorAll(".at-tool")) {
-          b.classList.remove("active");
-        }
-        button.classList.add("active");
-      });
+      button.title = `${label} (${key.toUpperCase()})`;
+      button.dataset.tool = value;
+      button.innerHTML = `${ICONS[value]}<kbd>${key.toUpperCase()}</kbd>`;
+      button.addEventListener("click", () => selectTool(value));
       return button;
     }
     toolbar.append(
-      toolButton(strings.annotateArrow, "arrow"),
-      toolButton(strings.annotateBox, "box")
+      toolButton("arrow", strings.annotateArrow, "a"),
+      toolButton("box", strings.annotateBox, "b"),
+      toolButton("text", strings.annotateText, "t")
     );
 
     const swatches = el("div", "at-swatches");
@@ -196,6 +272,9 @@ export function annotateBlob(
       dot.style.background = c;
       dot.addEventListener("click", () => {
         color = c;
+        if (textInput) {
+          textInput.style.color = c;
+        }
         for (const s of swatches.querySelectorAll(".at-swatch")) {
           s.classList.remove("active");
         }
@@ -205,14 +284,16 @@ export function annotateBlob(
     }
     toolbar.appendChild(swatches);
 
+    function undo(): void {
+      shapes.pop();
+      dirty = shapes.length > 0;
+      redraw();
+    }
     const undoBtn = el("button", "at-btn");
     undoBtn.type = "button";
-    undoBtn.textContent = strings.annotateUndo;
-    undoBtn.addEventListener("click", () => {
-      shapes.pop();
-      dirty = shapes.length > 0 || dirty;
-      redraw();
-    });
+    undoBtn.title = `${strings.annotateUndo} (${isMac() ? "⌘Z" : "Ctrl+Z"})`;
+    undoBtn.innerHTML = `${ICONS.undo}<kbd>${isMac() ? "⌘Z" : "^Z"}</kbd>`;
+    undoBtn.addEventListener("click", undo);
 
     const spacer = el("div", "at-spacer");
     const cancelBtn = el("button", "at-btn");
@@ -225,15 +306,47 @@ export function annotateBlob(
     doneBtn.addEventListener("click", commit);
     toolbar.append(undoBtn, spacer, cancelBtn, doneBtn);
 
+    // Clicking the dark backdrop (outside canvas and toolbar) commits and
+    // closes, preserving any annotations.
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay || event.target === stage) {
+        commit();
+      }
+    });
+
+    function onKeyDown(event: KeyboardEvent): void {
+      // Do not steal keys while typing into the text input.
+      if (textInput && event.target === textInput) {
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        finish(null);
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        undo();
+        return;
+      }
+      const asTool = TOOL_KEYS[event.key.toLowerCase()];
+      if (asTool && !(event.metaKey || event.ctrlKey || event.altKey)) {
+        event.preventDefault();
+        selectTool(asTool);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown, true);
+
     const url = URL.createObjectURL(blob);
     img.onload = () => {
       URL.revokeObjectURL(url);
       // Cap the working canvas so huge full-page shots stay responsive; the
       // output keeps this resolution.
-      const maxDim = 2000;
-      const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, 1));
+      const scale = Math.min(1, MAX_DIM / Math.max(img.naturalWidth, 1));
       canvas.width = Math.round(img.naturalWidth * scale);
       canvas.height = Math.round(img.naturalHeight * scale);
+      canvas.style.cursor = "crosshair";
       redraw();
     };
     img.onerror = () => {
@@ -242,4 +355,8 @@ export function annotateBlob(
     };
     img.src = url;
   });
+}
+
+function isMac(): boolean {
+  return /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent);
 }

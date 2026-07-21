@@ -4,6 +4,7 @@ export interface FeedbackWidgetStrings {
   annotateArrow: string;
   annotateBox: string;
   annotateDone: string;
+  annotateText: string;
   annotateUndo: string;
   buttonLabel: string;
   cancel: string;
@@ -32,6 +33,7 @@ export const DEFAULT_STRINGS: FeedbackWidgetStrings = {
   annotateArrow: "Arrow",
   annotateBox: "Box",
   annotateDone: "Done",
+  annotateText: "Text",
   annotateUndo: "Undo",
   buttonLabel: "Feedback",
   cancel: "Cancel",

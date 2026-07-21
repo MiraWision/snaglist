@@ -3,6 +3,8 @@ export { DownloadConnector } from "./connectors/download";
 export { MemoryConnector } from "./connectors/memory";
 export type { BrowserInfo } from "./metadata";
 export { parseUserAgent } from "./metadata";
+export { createOfflineQueue } from "./queue";
+export type { OfflineQueue, QueuedBatch } from "./queue";
 export type { AreaRect } from "./screenshot";
 export {
   captureArea,
@@ -29,6 +31,7 @@ export type { ConsoleErrorBuffer } from "./ui/console-buffer";
 export { installConsoleErrorBuffer } from "./ui/console-buffer";
 export type {
   FeedbackWidgetUiConfig,
+  IssueCategory,
   MountedFeedbackWidget,
 } from "./ui/mount";
 export { mountFeedbackWidget } from "./ui/mount";

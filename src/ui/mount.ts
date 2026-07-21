@@ -14,14 +14,32 @@ import {
 } from "./strings";
 import { type UiTheme, widgetStyles } from "./styles";
 
+export interface IssueCategory {
+  key: string;
+  label: string;
+}
+
 export interface FeedbackWidgetUiConfig {
   /** Button accent color. Default near-black graphite. */
   accentColor?: string;
+  /**
+   * Triage categories shown as chips. Defaults to Bug / Design / Idea.
+   * Pass an empty array to hide the chips entirely.
+   */
+  categories?: IssueCategory[];
+  /**
+   * Where to mount the widget. Defaults to document.body. Pass any element
+   * (e.g. a container in a Chrome extension content script or a custom app
+   * region) to embed the widget there instead.
+   */
+  container?: HTMLElement;
   /**
    * Global hotkey that toggles the widget menu, as "modifier+key".
    * Default "alt+shift+f". Pass null to disable.
    */
   hotkey?: string | null;
+  /** Called after an issue is captured (before background delivery settles). */
+  onIssueCaptured?: (result: CaptureResult) => void;
   /** Button corner. Default "bottom-right". */
   position?: "bottom-left" | "bottom-right";
   /** Overrides for user-facing texts (labels, hints, toasts). */
@@ -41,14 +59,13 @@ interface Draft {
   urls: string[];
 }
 
-const CATEGORIES: {
-  key: string;
-  label: (s: FeedbackWidgetStrings) => string;
-}[] = [
-  { key: "bug", label: (s) => s.categoryBug },
-  { key: "design", label: (s) => s.categoryDesign },
-  { key: "idea", label: (s) => s.categoryIdea },
-];
+function defaultCategories(s: FeedbackWidgetStrings): IssueCategory[] {
+  return [
+    { key: "bug", label: s.categoryBug },
+    { key: "design", label: s.categoryDesign },
+    { key: "idea", label: s.categoryIdea },
+  ];
+}
 
 const HOST_ATTRIBUTE = "data-feedback-widget";
 const TOAST_MS = 2600;
@@ -141,6 +158,8 @@ export function mountFeedbackWidget(
     ...DEFAULT_STRINGS,
     ...uiConfig.strings,
   };
+  const categories = uiConfig.categories ?? defaultCategories(strings);
+  const container = uiConfig.container ?? document.body;
   const hotkey =
     uiConfig.hotkey === null ? null : (uiConfig.hotkey ?? DEFAULT_HOTKEY);
 
@@ -210,10 +229,10 @@ export function mountFeedbackWidget(
   const panelContext = el("p", "panel-context");
   const thumbs = el("div", "thumbs");
   const chips = el("div", "chips");
-  const chipButtons = CATEGORIES.map(({ key, label }) => {
+  const chipButtons = categories.map(({ key, label }) => {
     const chip = el("button", "chip");
     chip.type = "button";
-    chip.textContent = label(strings);
+    chip.textContent = label;
     chip.dataset.category = key;
     chip.addEventListener("click", () => {
       if (!draft) {
@@ -263,7 +282,7 @@ export function mountFeedbackWidget(
     panel,
     toast
   );
-  document.body.appendChild(host);
+  container.appendChild(host);
 
   const errors: ConsoleErrorBuffer = installConsoleErrorBuffer();
 
@@ -655,6 +674,7 @@ export function mountFeedbackWidget(
       closePanel();
       refreshBadge();
       if (result) {
+        uiConfig.onIssueCaptured?.(result);
         trackDelivery(result).catch(() => undefined);
       }
     } catch (error) {

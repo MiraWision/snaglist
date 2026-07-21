@@ -9,6 +9,11 @@ import {
   isoTimestamp,
   type PageEnvironment,
 } from "./metadata";
+import {
+  createOfflineQueue,
+  NOOP_QUEUE,
+  type OfflineQueue,
+} from "./queue";
 import { type KeyValueStorage, SessionManager } from "./session";
 import { slugFromComment } from "./slug";
 import type {
@@ -41,8 +46,14 @@ export interface FeedbackWidgetCore {
 export interface CreateFeedbackWidgetOptions {
   /** Test seam: environment override instead of reading from window. */
   environment?: () => PageEnvironment;
+  /** Test seam: offline queue override. */
+  queue?: OfflineQueue;
   /** Test seam: storage override for the session manager. */
   storage?: KeyValueStorage;
+}
+
+function now(): number {
+  return Date.now();
 }
 
 const PROJECT_SLUG = /^[a-z0-9][a-z0-9-]*$/;
@@ -62,6 +73,11 @@ export function createFeedbackWidget(
     storage: options.storage,
   });
   const readEnvironment = options.environment ?? collectPageEnvironment;
+  const queue =
+    options.queue ??
+    (config.offlineQueue === false
+      ? NOOP_QUEUE
+      : createOfflineQueue(config.project));
   // Deliveries are chained so batches never interleave: otherwise a slow
   // upload of issue N's session.yaml could overwrite the newer index written
   // by issue N+1.
@@ -85,13 +101,45 @@ export function createFeedbackWidget(
   ): Promise<DeliveryReport> {
     pendingDeliveries++;
     const delivered = deliveryQueue
-      .then(() => deliver(config.connectors, sessionId, files))
+      .then(async () => {
+        // Outbox: persist before delivering so the issue survives a failed
+        // upload or the tab closing; drop it from the queue on success.
+        const queueId = await queue.enqueue({
+          sessionId,
+          files,
+          createdAt: now(),
+        });
+        const report = await deliver(config.connectors, sessionId, files);
+        if (report.ok && queueId !== null) {
+          await queue.remove(queueId);
+        }
+        return report;
+      })
       .finally(() => {
         pendingDeliveries--;
       });
     deliveryQueue = delivered;
     return delivered;
   }
+
+  // On load, retry anything left undelivered from a previous session,
+  // oldest first, before new captures run.
+  function flushQueue(): void {
+    deliveryQueue = deliveryQueue.then(async () => {
+      const pending = await queue.all();
+      for (const batch of pending) {
+        const report = await deliver(
+          config.connectors,
+          batch.sessionId,
+          batch.files
+        );
+        if (report.ok) {
+          await queue.remove(batch.id);
+        }
+      }
+    });
+  }
+  flushQueue();
 
   function doCapture(input: CaptureIssueInput): CaptureResult | null {
     if (!enabled) {

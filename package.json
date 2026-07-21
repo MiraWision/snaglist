@@ -1,20 +1,24 @@
 {
   "name": "sluglist",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Universal embeddable feedback widget: capture visual feedback (element, area, full page) on dev and staging sites, annotate it, and deliver artifacts through pluggable connectors.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
+    "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "pack": "npm pack",
@@ -49,6 +53,8 @@
     "jszip": "^3.10.1"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "yaml": "^2.8.0"

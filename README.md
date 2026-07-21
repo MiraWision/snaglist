@@ -33,11 +33,21 @@ mountFeedbackWidget(widget, {
   hotkey: "alt+shift+f",          // menu toggle; "" or null disables it
   position: "bottom-right",
   accentColor: "#18181b",
+  container: document.body,       // mount anywhere (e.g. an extension content root)
+  categories: [                   // triage chips; [] hides them
+    { key: "bug", label: "Bug" },
+    { key: "design", label: "Design" },
+  ],
+  onIssueCaptured: (result) => analytics.track("feedback", result.issueId),
 });
 ```
 
 Only load it on dev/staging. In a production build, guard the import so the widget code is never
-initialized.
+initialized. Ships as ESM and CJS; `html-to-image` is loaded lazily on the first capture, so it is
+not part of the initial bundle.
+
+Undelivered issues are persisted to IndexedDB (an outbox) and retried on the next load, so a failed
+upload or a closed tab does not lose feedback. Disable with `offlineQueue: false` on the config.
 
 ## Capture modes
 
@@ -46,8 +56,9 @@ initialized.
 - **area** — drag a rectangle and crop to it
 - **comment only** — no screenshot
 
-Each screenshot can be annotated (arrow / box, color, undo) before sending, and an issue can carry
-multiple screenshots.
+Each screenshot can be annotated before sending (arrow, box, text; color; undo), with keyboard
+shortcuts (A / B / T, Ctrl/Cmd+Z, Esc, click backdrop to close), and an issue can carry multiple
+screenshots.
 
 ## Connectors
 

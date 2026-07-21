@@ -26,6 +26,11 @@ export interface FeedbackWidgetConfig {
   connectors: FeedbackConnector[];
   /** Default true. The host project decides based on its environment. */
   enabled?: boolean;
+  /**
+   * Persist undelivered artifacts (IndexedDB) and retry on the next load.
+   * Default true; set false to disable the offline outbox.
+   */
+  offlineQueue?: boolean;
   /** Project slug, written into session.yaml. */
   project: string;
 }
