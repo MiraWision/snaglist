@@ -14,6 +14,7 @@ import {
   NOOP_QUEUE,
   type OfflineQueue,
 } from "./queue";
+import { normalizeCustom, normalizeIdentity } from "./reporter";
 import { type KeyValueStorage, SessionManager } from "./session";
 import { slugFromComment } from "./slug";
 import type {
@@ -68,6 +69,11 @@ export function createFeedbackWidget(
     );
   }
   const enabled = config.enabled !== false;
+  // Identity + custom are validated once at init and fixed for the session.
+  // `undefined` means "not configured" → the fields are omitted from artifacts
+  // (backward compatible); `null` means "configured but empty".
+  const reporter = normalizeIdentity(config.identity);
+  const custom = normalizeCustom(config.custom);
   const sessions = new SessionManager({
     project: config.project,
     storage: options.storage,
@@ -165,6 +171,8 @@ export function createFeedbackWidget(
       timezone: env.timezone,
       color_scheme: env.colorScheme,
       reduced_motion: env.reducedMotion,
+      // Session-level reporter: present only when identity was configured.
+      ...(reporter !== undefined ? { reporter } : {}),
     }));
 
     const id = sessions.nextIssueId(state);
@@ -222,6 +230,10 @@ export function createFeedbackWidget(
           : {}),
         ...(input.domPath !== undefined ? { domPath: input.domPath } : {}),
         ...(input.screen !== undefined ? { screen: input.screen } : {}),
+        // Reporter + custom mirrored into each issue (present only when
+        // configured), so an issue file is self-contained.
+        ...(reporter !== undefined ? { reporter } : {}),
+        ...(custom !== undefined ? { custom } : {}),
         createdAt,
         comment,
         consoleErrors: input.consoleErrors,

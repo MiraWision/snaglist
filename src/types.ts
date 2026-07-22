@@ -22,10 +22,38 @@ export interface FeedbackConnector {
   put(sessionId: string, file: ArtifactFile): Promise<void>;
 }
 
+/** Who is reporting. Optional; fixed at init, recorded once per session. */
+export interface FeedbackIdentity {
+  email?: string;
+  name?: string;
+  userId?: string;
+}
+
+/** Flat, primitive-only project fields attached to every issue. */
+export type FeedbackCustom = Record<string, string | number | boolean>;
+
+/**
+ * Serialized reporter block as it appears in artifacts (snake_case keys).
+ * Only provided sub-fields are present; a configured-but-empty identity is null.
+ */
+export interface ReporterMeta {
+  email?: string;
+  name?: string;
+  user_id?: string;
+}
+
 export interface FeedbackWidgetConfig {
   connectors: FeedbackConnector[];
+  /**
+   * Flat project fields (string | number | boolean) attached to every issue's
+   * frontmatter as `custom`. Validated at init: keys → snake_case, non-primitive
+   * values dropped with a warning, max 20 keys, values truncated to 200 chars.
+   */
+  custom?: FeedbackCustom;
   /** Default true. The host project decides based on its environment. */
   enabled?: boolean;
+  /** Reporter identity, recorded once per session (session.yaml + each issue). */
+  identity?: FeedbackIdentity;
   /**
    * Persist undelivered artifacts (IndexedDB) and retry on the next load.
    * Default true; set false to disable the offline outbox.
@@ -99,6 +127,11 @@ export interface SessionMeta {
   project: string;
   /** Whether the reader prefers reduced motion. */
   reduced_motion?: boolean;
+  /**
+   * Reporter identity, session-level. Present only when `identity` is configured
+   * (null when configured but empty); omitted entirely otherwise (back-compat).
+   */
+  reporter?: ReporterMeta | null;
   /** Physical screen resolution, e.g. "2560x1440". */
   screen?: string;
   session_id: string;

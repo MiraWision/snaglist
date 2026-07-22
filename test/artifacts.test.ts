@@ -252,6 +252,82 @@ describe("buildIssueMarkdown", () => {
     expect(withoutCategory.category).toBeUndefined();
   });
 
+  it("emits reporter + custom blocks when provided (and valid YAML)", () => {
+    const md = buildIssueMarkdown({
+      id: "09",
+      url: "/app",
+      selector: null,
+      mode: "fullpage",
+      viewport: "1512x982",
+      screenshot: null,
+      createdAt: "2026-07-22T10:00:00Z",
+      comment: "Beta report",
+      reporter: { user_id: "u_18293", email: "user@example.com", name: "Anna K." },
+      custom: { plan: "pro", app_version: "2.4.1", seats: 5 },
+    });
+    const fm = parse(md.split("---\n")[1]);
+    expect(fm.reporter).toEqual({
+      user_id: "u_18293",
+      email: "user@example.com",
+      name: "Anna K.",
+    });
+    expect(fm.custom).toEqual({ plan: "pro", app_version: "2.4.1", seats: 5 });
+  });
+
+  it("emits reporter/custom as null when configured but empty", () => {
+    const fm = parse(
+      buildIssueMarkdown({
+        id: "10",
+        url: "/app",
+        selector: null,
+        mode: "fullpage",
+        viewport: "1512x982",
+        screenshot: null,
+        createdAt: "2026-07-22T10:00:00Z",
+        comment: "Beta report, no identity",
+        reporter: null,
+        custom: null,
+      }).split("---\n")[1]
+    );
+    expect(fm.reporter).toBeNull();
+    expect(fm.custom).toBeNull();
+  });
+
+  it("omits reporter/custom entirely when not provided (back-compat)", () => {
+    const fm = parse(
+      buildIssueMarkdown({
+        id: "11",
+        url: "/app",
+        selector: null,
+        mode: "fullpage",
+        viewport: "1512x982",
+        screenshot: null,
+        createdAt: "2026-07-22T10:00:00Z",
+        comment: "Legacy",
+      }).split("---\n")[1]
+    );
+    expect("reporter" in fm).toBe(false);
+    expect("custom" in fm).toBe(false);
+  });
+
+  it("emits session-level reporter only when present", () => {
+    const bare = parse(buildSessionYaml(state));
+    expect("reporter" in bare).toBe(false);
+
+    const withReporter = parse(
+      buildSessionYaml({
+        ...state,
+        reporter: { user_id: "u_1", name: "Anna K." },
+      })
+    );
+    expect(withReporter.reporter).toEqual({ user_id: "u_1", name: "Anna K." });
+
+    const emptyReporter = parse(
+      buildSessionYaml({ ...state, reporter: null })
+    );
+    expect(emptyReporter.reporter).toBeNull();
+  });
+
   it("frontmatter parses as YAML with expected fields", () => {
     const md = buildIssueMarkdown({
       id: "03",

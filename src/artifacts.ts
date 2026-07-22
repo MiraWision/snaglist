@@ -2,14 +2,44 @@ import type {
   ArtifactFile,
   CaptureMode,
   IssueIndexEntry,
+  ReporterMeta,
   SessionState,
 } from "./types";
-import { type YamlValue, yamlLine, yamlListOfMaps, yamlMap } from "./yaml";
+import {
+  formatScalar,
+  type YamlScalar,
+  type YamlValue,
+  yamlLine,
+  yamlListOfMaps,
+  yamlMap,
+} from "./yaml";
 
 /**
  * Artifact builder. The output structure and frontmatter are a contract
  * consumed by future parsers; any change must be additive only.
  */
+
+/**
+ * A one-level nested map: `key:` then indented sub-entries, or `key: null` when
+ * the object is null or has no entries. Used for the additive `reporter` and
+ * `custom` blocks.
+ */
+function yamlBlock(
+  key: string,
+  obj: ReporterMeta | Record<string, YamlScalar> | null,
+  indent = ""
+): string {
+  const entries = obj
+    ? Object.entries(obj).filter(([, v]) => v !== undefined)
+    : [];
+  if (entries.length === 0) {
+    return `${indent}${key}: null`;
+  }
+  const sub = entries
+    .map(([k, v]) => `${indent}  ${k}: ${formatScalar(v as YamlScalar)}`)
+    .join("\n");
+  return `${indent}${key}:\n${sub}`;
+}
 
 export function buildSessionYaml(state: SessionState): string {
   const headEntries: [string, YamlValue][] = [
@@ -42,7 +72,12 @@ export function buildSessionYaml(state: SessionState): string {
   if (state.reduced_motion !== undefined) {
     headEntries.push(["reduced_motion", state.reduced_motion]);
   }
-  const head = yamlMap(headEntries);
+  let head = yamlMap(headEntries);
+  // Additive: session-level reporter, emitted only when identity is configured
+  // (null when configured but empty). Sessions without it stay byte-identical.
+  if (state.reporter !== undefined) {
+    head += `\n${yamlBlock("reporter", state.reporter)}`;
+  }
 
   if (state.issues.length === 0) {
     return `${head}\nissues: []\n`;
@@ -86,10 +121,14 @@ export interface IssueMarkdownInput {
   comment: string;
   consoleErrors?: string[];
   createdAt: string;
+  /** Flat project fields; emitted as a `custom:` block (null when empty). */
+  custom?: Record<string, YamlScalar> | null;
   domPath?: string | null;
   elementText?: string | null;
   id: string;
   mode: CaptureMode;
+  /** Reporter identity mirrored into the issue; `reporter:` block (null empty). */
+  reporter?: ReporterMeta | null;
   screen?: string | null;
   screenshot: string | null;
   /** All screenshot file names; emitted only when there is more than one. */
@@ -137,6 +176,14 @@ export function buildIssueMarkdown(input: IssueMarkdownInput): string {
     lines.push(yamlLine("screenshots", input.screenshots));
   }
   lines.push(yamlLine("created_at", input.createdAt));
+  // Additive reporter / custom blocks: emitted only when provided (identity or
+  // custom configured), so fixtures that omit them stay byte-identical.
+  if (input.reporter !== undefined) {
+    lines.push(yamlBlock("reporter", input.reporter));
+  }
+  if (input.custom !== undefined) {
+    lines.push(yamlBlock("custom", input.custom));
+  }
   const frontmatter = lines.join("\n");
 
   let body = input.comment.trim();

@@ -190,6 +190,56 @@ describe("captureIssue", () => {
     }
   });
 
+  it("threads identity + custom through to session.yaml and the issue file", async () => {
+    const memory = new MemoryConnector();
+    const warnSpy = vi
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
+    const widget = createFeedbackWidget(
+      {
+        project: "trugenix",
+        connectors: [memory],
+        identity: { userId: "u_18293", email: "user@example.com", name: "Anna K." },
+        custom: {
+          plan: "pro",
+          appVersion: "2.4.1",
+          // dropped: nested object
+          meta: { a: 1 } as unknown as string,
+        },
+      },
+      { storage: createMemoryStorage(), environment: testEnvironment }
+    );
+    const result = await widget.captureIssue({
+      comment: "Beta report",
+      mode: "fullpage",
+    });
+    await result?.delivered;
+    const sessionId = result?.sessionId as string;
+
+    const session = parse(
+      await (memory.getFile(sessionId, "session.yaml") as ArtifactFile).blob.text()
+    );
+    expect(session.reporter).toEqual({
+      user_id: "u_18293",
+      email: "user@example.com",
+      name: "Anna K.",
+    });
+
+    const issue = memory
+      .getFiles(sessionId)
+      .find((f) => f.path.endsWith(".md")) as ArtifactFile;
+    const fm = parse((await issue.blob.text()).split("---\n")[1]);
+    expect(fm.reporter).toEqual({
+      user_id: "u_18293",
+      email: "user@example.com",
+      name: "Anna K.",
+    });
+    // camelCase → snake_case; nested object dropped with a warning.
+    expect(fm.custom).toEqual({ plan: "pro", app_version: "2.4.1" });
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("meta"));
+    warnSpy.mockRestore();
+  });
+
   it("returns null and captures nothing when disabled", async () => {
     const memory = new MemoryConnector();
     const warnSpy = vi

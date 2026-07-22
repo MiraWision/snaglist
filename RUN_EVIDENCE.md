@@ -83,4 +83,103 @@ options for masking without a persistent live-DOM change (all satisfy the accept
 > Phases 1 (rename) and 2 (identity/custom) are independent and proceed.
 
 ---
-<!-- Phase 1+ evidence appended below as work lands. -->
+## Phase 1 — Rename sluglist → snaglist
+
+### 1.1 Local rename (done, committed `d8ae832`)
+
+```
+$ grep -rn -i sluglist . --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git
+README.md:7:> **Renamed from `sluglist`.** ...        # allowed (Renamed-from note)
+README.md:9:> Run `npm install snaglist`. The old `sluglist` ...
+RUN_EVIDENCE.md: ...                                  # this evidence file
+```
+→ 0 matches outside the README "Renamed from" note + this evidence file. package.json diff: name,
+version 1.1.1→1.2.0, unpkg/jsdelivr → `snaglist.global.js`, repo/bugs/homepage URLs, keywords
+(−sluglist +snaglist +snagging +beta feedback). tsup IIFE `globalName: "Snaglist"`, entry
+`snaglist.global.js`. Docs: base `/snaglist/`, alias, landing copy, title. Lockfiles regenerated.
+
+```
+$ npm run type-check    # clean
+$ npm test              # Test Files 6 passed (6) / Tests 42 passed (42)
+$ npm run build         # dist/snaglist.global.js 154.95 KB; index.{js,cjs,d.ts} emitted
+```
+
+### 1.2 External (done by me)
+
+```
+$ gh repo rename snaglist --repo MiraWision/sluglist --yes
+$ gh repo view MiraWision/snaglist -q '.name + " " + .url'
+snaglist https://github.com/MiraWision/snaglist
+$ git remote set-url origin git@github.com:MiraWision/snaglist.git && git push origin main
+  c61b061..d8ae832  main -> main
+$ cd docs && npm run deploy       # gh-pages → https://mirawision.github.io/snaglist  (Published)
+```
+
+### 1.3 npm publish + deprecate (PENDING — user runs, 2FA/OTP-gated)
+
+```
+# to run:
+npm publish --access public --otp=<code>          # snaglist@1.2.0
+npm deprecate sluglist "Renamed to snaglist — npm install snaglist" --otp=<code>
+# verify (outputs to be pasted here):
+npm view snaglist version        # expect 1.2.0
+npm install sluglist             # expect deprecation warning
+```
+
+---
+## Phase 2 — Identity + custom fields
+
+Config gains `identity?: {userId,email,name}` and `custom?: Record<string, string|number|boolean>`
+(both optional, fully back-compatible). Validated once at init (`src/reporter.ts`):
+keys → snake_case, non-primitive/array/null/NaN values dropped with `console.warn`, ≤20 keys,
+string values clipped to 200 chars. `reporter` is session-level (`session.yaml`) and mirrored into
+each issue; `custom` per issue. All emission is additive (omitted when unconfigured, `null` when
+configured-but-empty), so existing byte-exact fixtures are untouched.
+
+### 2.1 Tests
+
+```
+$ npm run type-check     # clean
+$ npm test               # Test Files 7 passed (7) / Tests 60 passed (60)
+```
+New: `test/reporter.test.ts` (13 — normalize identity/custom, snake_case, nested-object drop with
+warning, 20-key cap, 200-char clip, null/undefined semantics); `test/artifacts.test.ts` +5 (reporter/
+custom present, null, omitted, session-level reporter); `test/capture.test.ts` +1 (end-to-end: identity
++custom through `createFeedbackWidget` → `session.yaml` + issue frontmatter, nested `custom.meta` dropped
+with warning). Existing 42 format/fixture tests unchanged.
+
+### 2.2 Real emitted artifact (via `dist`, node)
+
+```yaml
+# NN-issue.md frontmatter (identity + custom configured)
+id: "01"
+url: /checkout
+selector: null
+mode: fullpage
+viewport: 1512x982
+screenshot: 01-x.png
+created_at: 2026-07-22T10:00:00Z
+reporter:
+  user_id: u_18293
+  email: "user@example.com"
+  name: Anna K.
+custom:
+  plan: pro
+  app_version: 2.4.1        # note: appVersion → app_version
+  seats: 5
+```
+```yaml
+# session.yaml carries the session-level reporter
+project: acme
+session_id: session-2026-07-22-ab12
+...
+device_pixel_ratio: 2
+reporter:
+  user_id: u_18293
+  email: "user@example.com"
+  name: Anna K.
+issues: []
+```
+
+---
+<!-- Phase 3+ evidence appended below as work lands. -->

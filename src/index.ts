@@ -14,6 +14,11 @@ export {
 export type { KeyValueStorage } from "./session";
 export { createMemoryStorage, SessionManager } from "./session";
 export { slugFromComment } from "./slug";
+export {
+  normalizeCustom,
+  normalizeIdentity,
+  toSnakeCase,
+} from "./reporter";
 export type {
   ArtifactFile,
   CaptureIssueInput,
@@ -22,8 +27,11 @@ export type {
   DeliveryFailure,
   DeliveryReport,
   FeedbackConnector,
+  FeedbackCustom,
+  FeedbackIdentity,
   FeedbackWidgetConfig,
   IssueIndexEntry,
+  ReporterMeta,
   SessionMeta,
   SessionState,
 } from "./types";
