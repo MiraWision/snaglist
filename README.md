@@ -266,6 +266,19 @@ UI is never blocked).
 
 > Add `.snaglist/` to your project's `.gitignore`.
 
+### Let an agent fix it (Claude Code skill)
+
+The package ships a `snaglist-fix` skill that reads `.snaglist/` and fixes the reported issues. Install
+it into your project once:
+
+```bash
+mkdir -p .claude/skills && cp -r node_modules/snaglist/skills/snaglist-fix .claude/skills/
+```
+
+Then, after clicking feedback, ask Claude Code to "fix feedback": it reads each issue (comment,
+selector, `element_text`, screenshot, `## Errors`), localizes and fixes the code, and writes a
+`.done` report into the session folder. See [`skills/snaglist-fix/SKILL.md`](skills/snaglist-fix/SKILL.md).
+
 ## Programmatic capture
 
 The UI is optional. Produce and deliver an issue without any chrome:

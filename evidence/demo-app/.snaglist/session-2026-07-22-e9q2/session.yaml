@@ -1,0 +1,37 @@
+project: acme
+session_id: session-2026-07-22-e9q2
+created_at: 2026-07-22T15:05:11Z
+base_url: http://localhost:5175
+browser: Chrome 148
+os: macOS
+viewport: 488x513
+device_pixel_ratio: 2
+screen: 1792x1120
+language: en-GB
+languages:
+  - en-GB
+  - uk-UA
+  - en-UA
+  - ru-UA
+timezone: Europe/Warsaw
+color_scheme: dark
+reduced_motion: false
+issues:
+  - id: "01"
+    file: 01-typo-in-the-heading-wlecome-should-be.md
+    screenshot: 01-typo-in-the-heading-wlecome-should-be.png
+    url: /evidence/demo-app/app.html
+    selector: "main > h1"
+    created_at: 2026-07-22T15:05:11Z
+  - id: "02"
+    file: 02-the-get-started-button-text-is.md
+    screenshot: 02-the-get-started-button-text-is.png
+    url: /evidence/demo-app/app.html
+    selector: "main > button"
+    created_at: 2026-07-22T15:05:13Z
+  - id: "03"
+    file: 03-the-tagline-overlaps-the-title-it-sits.md
+    screenshot: 03-the-tagline-overlaps-the-title-it-sits.png
+    url: /evidence/demo-app/app.html
+    selector: "main > p"
+    created_at: 2026-07-22T15:05:14Z

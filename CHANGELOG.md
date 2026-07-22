@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.4.0 — Local feedback loop, error capture, shortcut fix, brand logo
+
+### Local feedback loop (new)
+
+- **`snaglist dev` CLI** (`npx snaglist dev`): a local sidecar that writes feedback artifacts into a
+  `.snaglist/` folder (`--dir` / `--port`). Binds to `127.0.0.1` only, path-traversal-safe, logs each
+  file. Ships a `snaglist-fix` skill (`skills/snaglist-fix/`) that reads `.snaglist/` and fixes issues.
+- **`LocalConnector`**: posts artifacts to the sidecar (default `127.0.0.1:4477`); warns once and stays
+  out of the way when the server isn't running.
+
+### Error capture (new)
+
+- `config.errors` — a ring buffer fed by `console.error`, uncaught `error` events and
+  `unhandledrejection`. Each issue gets a `## Errors` section (source + relative time) and an additive
+  `errors_count` frontmatter field. `capture` / `bufferSize` / `captureWarnings` options.
+
+### Shortcut
+
+- **Fixed:** the default `Shift+Alt+F` never fired on macOS because matching used `event.key` (which is
+  a dead/special char for Option+letter). Matching is now by physical `event.code`.
+- `config.shortcut` (`"Shift+Alt+F"` string or `false`) with a proper parser and focus guard.
+
+### Branding
+
+- Adopted the snaglist brand logo across the favicon, docs header, and the widget button.
+
+No breaking changes; all artifact additions are additive. `FeedbackConnector` unchanged.
+
 ## 1.3.0 — Renamed to snaglist + beta feedback mode
 
 **Renamed `sluglist` → `snaglist`** (from a *snagging list*, the punch list of defects a client marks

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acme — demo app</title>
+    <style>
+      body { font-family: -apple-system, system-ui, sans-serif; margin: 0; color: #18181b; background: #fff; }
+      .hero { max-width: 640px; margin: 60px auto; padding: 24px; text-align: center; }
+      .hero-title { font-size: 40px; margin: 0; }
+      .tagline { color: #6b7280; font-size: 18px; margin-top: 8px; }
+      .cta {
+        margin-top: 24px;
+        padding: 12px 28px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #ffffff;
+        background: #18181b;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="hero">
+      <h1 class="hero-title">Welcome to Acme</h1>
+      <p class="tagline">The fastest way to ship your side project.</p>
+      <button class="cta" type="button">Get started</button>
+    </main>
+
+    <script src="../../dist/snaglist.global.js"></script>
+    <script>
+      const core = Snaglist.createFeedbackWidget({
+        project: "acme",
+        connectors: [new Snaglist.LocalConnector()], // 127.0.0.1:4477
+      });
+      Snaglist.mountFeedbackWidget(core);
+      window.__core = core;
+
+      window.fileFeedback = async () => {
+        const specs = [
+          { sel: ".hero-title", comment: 'Typo in the heading — "Wlecome" should be "Welcome".' },
+          { sel: ".cta", comment: 'The "Get started" button text is unreadable — no contrast against the background.' },
+          { sel: ".tagline", comment: "The tagline overlaps the title — it sits on top of the heading." },
+        ];
+        const reports = [];
+        for (const s of specs) {
+          const el = document.querySelector(s.sel);
+          const meta = Snaglist.collectElementMetadata(el);
+          const shot = await Snaglist.captureElement(el);
+          const r = await core.captureIssue({
+            comment: s.comment,
+            mode: "element",
+            selector: meta.selector,
+            selectorStrategy: meta.selectorStrategy,
+            selectorUnique: meta.selectorUnique,
+            elementText: meta.elementText,
+            domPath: meta.domPath,
+            screen: meta.screen,
+            screenshot: shot,
+          });
+          reports.push(await r.delivered);
+        }
+        return { sessionId: core.getSession().session_id, ok: reports.every((x) => x.ok) };
+      };
+    </script>
+  </body>
+</html>

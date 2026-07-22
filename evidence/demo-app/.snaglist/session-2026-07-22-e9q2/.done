@@ -1,0 +1,19 @@
+# snaglist-fix report — session-2026-07-22-e9q2
+
+App: Acme demo (`evidence/demo-app/app.html`). 3 issues, all fixed.
+
+## 01 — Typo in the heading
+- Reported: `Wlecome` should be `Welcome` (selector `main > h1`, element_text "Wlecome to Acme").
+- Fix: `app.html` — `<h1 class="hero-title">` text `Wlecome to Acme` → `Welcome to Acme`.
+
+## 02 — "Get started" button unreadable
+- Reported: button text has no contrast (selector `main > button`, element_text "Get started").
+  Screenshot confirmed near-invisible light-gray-on-light-gray text.
+- Fix: `app.html` — `.cta` `color: #f2f2f2; background: #f5f5f5` → `color: #ffffff; background: #18181b`.
+
+## 03 — Tagline overlaps the title
+- Reported: tagline sits on top of the heading (selector `main > p`, element_text
+  "The fastest way to ship your side project."). Screenshot showed the two lines stacked.
+- Fix: `app.html` — `.tagline` `margin-top: -38px` → `margin-top: 8px`.
+
+No unrelated changes. No `## Errors` on any issue (errors_count: 0), so no runtime diagnosis needed.

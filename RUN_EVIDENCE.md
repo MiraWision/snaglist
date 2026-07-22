@@ -483,3 +483,46 @@ $ curl 127.0.0.1:5511/health → {"ok":true,"dir":".../.feedback"}
 $ curl -X POST 127.0.0.1:5511/put -d '{sessionId:session-2026-07-22-zz99, path:session.yaml, ...}'
 → {"ok":true}; wrote .feedback/session-2026-07-22-zz99/session.yaml
 ```
+
+## Phase 5 — snaglist-fix skill + live loop E2E
+
+Skill at `skills/snaglist-fix/SKILL.md` (triggers, algorithm: sessions without `.done` → session.yaml →
+per-issue md + screenshot → localize by selector/element_text/url → fix → write `.done`; rules: view the
+screenshot, never guess, only fix what's reported, use `## Errors` as a hint). Shipped in the package
+(`files: [dist, skills]`) + README "Let an agent fix it" section.
+
+### Live loop (the main E2E) — evidence/demo-app/
+
+A demo app (`evidence/demo-app/app.html`) with 3 intentional defects, the widget wired to a
+`LocalConnector`, and a real `snaglist dev` writing to `evidence/demo-app/.snaglist/`.
+
+1. **Report** (through the widget → LocalConnector → CLI): 3 element-mode issues captured with real
+   screenshots. `deliveredOk: true`. Folder `.snaglist/session-2026-07-22-e9q2/` = session.yaml + 3 md +
+   3 png; the CLI logged every file (`evidence/demo-app/devserver.log`).
+2. **Fix** (acting as the skill): read session.yaml + each md, viewed each png, localized by
+   `element_text`/`selector`, applied 3 fixes to `app.html`, wrote `.snaglist/…/.done`.
+
+| Issue | Reported | Fix |
+|---|---|---|
+| 01 | Heading typo "Wlecome" | `Wlecome to Acme` → `Welcome to Acme` |
+| 02 | "Get started" button unreadable (no contrast) | `.cta` `#f2f2f2/#f5f5f5` → `#fff/#18181b` |
+| 03 | Tagline overlaps the title | `.tagline` `margin-top: -38px` → `8px` |
+
+3. **Verify** (reload): `heading: "Welcome to Acme"`, `ctaColor: rgb(255,255,255)`,
+   `ctaBg: rgb(24,24,27)`, `taglineMarginTop: 8px`, `overlap: false`. Before/after screenshots:
+   [`evidence/demo-app/before.png`](evidence/demo-app/before.png) →
+   [`evidence/demo-app/after.png`](evidence/demo-app/after.png). Report:
+   [`.done`](evidence/demo-app/.snaglist/session-2026-07-22-e9q2/.done).
+
+Loop closed: click on localhost → `.snaglist/` → agent read + fixed → `.done` → defects gone.
+
+## Phase 6 — Summary
+
+All phases have external, verifiable artifacts above. Final gate: `npm run type-check` clean,
+`npm test` = 104 passing across 12 files, `npm run build` emits ESM+CJS+IIFE + `dist/cli.js`.
+
+### Known limitations
+- Browser tab favicon and the manual macOS Option+F keypress can't be captured by the headless preview
+  (curl 200 + rendered icon + synthetic-event proof stand in; final tab/keypress glance is the user's).
+- Error relative-time in the live E2E shows "0s" (all fired within a second); distinct ages are unit-tested.
+- The `snaglist dev` server has no auth by design (local-only, README-documented).
