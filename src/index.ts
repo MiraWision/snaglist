@@ -1,5 +1,7 @@
 export { buildIssueMarkdown, buildSessionYaml } from "./artifacts";
 export { DownloadConnector } from "./connectors/download";
+export { LocalConnector } from "./connectors/local";
+export type { LocalConnectorOptions } from "./connectors/local";
 export { MemoryConnector } from "./connectors/memory";
 export { applyMask } from "./mask";
 export type { MaskResult } from "./mask";

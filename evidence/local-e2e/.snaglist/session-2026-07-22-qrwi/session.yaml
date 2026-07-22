@@ -1,0 +1,37 @@
+project: acme
+session_id: session-2026-07-22-qrwi
+created_at: 2026-07-22T14:05:09Z
+base_url: http://localhost:5175
+browser: Chrome 148
+os: macOS
+viewport: 488x513
+device_pixel_ratio: 2
+screen: 1792x1120
+language: en-GB
+languages:
+  - en-GB
+  - uk-UA
+  - en-UA
+  - ru-UA
+timezone: Europe/Warsaw
+color_scheme: dark
+reduced_motion: false
+issues:
+  - id: "01"
+    file: 01-something-broke-on-this-page.md
+    screenshot: null
+    url: /evidence/errors-harness.html
+    selector: null
+    created_at: 2026-07-22T14:05:09Z
+  - id: "02"
+    file: 02-header-overlaps-the-nav-on-mobile.md
+    screenshot: 02-header-overlaps-the-nav-on-mobile.png
+    url: /evidence/local-harness.html
+    selector: null
+    created_at: 2026-07-22T14:13:15Z
+  - id: "03"
+    file: 03-save-button-does-nothing.md
+    screenshot: 03-save-button-does-nothing.png
+    url: /evidence/local-harness.html
+    selector: button.save
+    created_at: 2026-07-22T14:13:16Z

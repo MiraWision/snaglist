@@ -83,9 +83,9 @@ const HOST_ATTRIBUTE = "data-feedback-widget";
 const TOAST_MS = 2600;
 const DEFAULT_SHORTCUT = "Shift+Alt+F";
 
-// Round chat bubble (rendered in currentColor). The dot marks the visual
-// center of the bubble body so it optically centers in the round button.
-const FEEDBACK_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
+// snaglist brand mark: chat bubble + center dot (rendered in currentColor).
+// viewBox is cropped to the mark from the 512x512 logo so it fills the button.
+const FEEDBACK_ICON_SVG = `<svg viewBox="141 158 230 230" width="23" height="23" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M345 215.7C345 212.71 343.41 208.961 340.22 205.778C337.031 202.597 333.262 201 330.242 201H181.758C177.73 201 174 202.35 171.396 204.659C168.959 206.82 167 210.25 167 215.7V296.675C167 299.665 168.59 303.414 171.78 306.597C174.97 309.778 178.738 311.375 181.758 311.375H229.994L255.97 337.286L281.945 311.375H330.242C333.262 311.375 337.031 309.778 340.22 306.597C343.41 303.414 345 299.665 345 296.675V215.7ZM363 296.675C363 305.535 358.65 313.636 352.932 319.341C347.212 325.047 339.101 329.375 330.242 329.375H289.389L255.97 362.713L222.551 329.375H181.758C172.899 329.375 164.788 325.047 159.068 319.341C153.35 313.636 149 305.535 149 296.675V215.7C149 205.35 152.981 196.931 159.453 191.191C165.758 185.601 173.907 183 181.758 183H330.242C339.101 183 347.212 187.328 352.932 193.034C358.65 198.739 363 206.84 363 215.7V296.675Z"/><path d="M274 256C274 265.941 265.941 274 256 274C246.059 274 238 265.941 238 256C238 246.059 246.059 238 256 238C265.941 238 274 246.059 274 256Z"/></svg>`;
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,

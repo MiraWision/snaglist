@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>snaglist — local loop harness</title>
+  </head>
+  <body>
+    <h1>Local loop harness</h1>
+    <script src="../dist/snaglist.global.js"></script>
+    <script>
+      const local = new Snaglist.LocalConnector(); // default 127.0.0.1:4477
+      const core = Snaglist.createFeedbackWidget({
+        project: "acme",
+        connectors: [local],
+      });
+      Snaglist.mountFeedbackWidget(core);
+      window.__core = core;
+
+      window.png = () =>
+        new Promise((res) => {
+          const c = document.createElement("canvas");
+          c.width = 8;
+          c.height = 8;
+          const x = c.getContext("2d");
+          x.fillStyle = "#4477cc";
+          x.fillRect(0, 0, 8, 8);
+          c.toBlob(res, "image/png");
+        });
+
+      window.runLocal = async () => {
+        const a = await core.captureIssue({
+          comment: "Header overlaps the nav on mobile",
+          mode: "fullpage",
+          screenshot: await window.png(),
+        });
+        const b = await core.captureIssue({
+          comment: "Save button does nothing",
+          mode: "element",
+          selector: "button.save",
+          screenshot: await window.png(),
+        });
+        const ra = await a.delivered;
+        const rb = await b.delivered;
+        return {
+          sessionId: a.sessionId,
+          deliveredOk: ra.ok && rb.ok,
+          files: [...a.files, ...b.files].map((f) => f.path),
+        };
+      };
+    </script>
+  </body>
+</html>

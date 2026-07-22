@@ -25,4 +25,15 @@ export default defineConfig([
     noExternal: ["html-to-image", "jszip"],
     target: "es2020",
   },
+  // Node-only CLI (`snaglist dev`). Separate entry so its node:fs/node:http
+  // imports never reach the browser bundle. Emitted as an executable ESM file.
+  {
+    entry: { cli: "src/cli/index.ts" },
+    format: ["esm"],
+    platform: "node",
+    target: "node18",
+    banner: { js: "#!/usr/bin/env node" },
+    sourcemap: false,
+    dts: false,
+  },
 ]);
