@@ -358,3 +358,31 @@ oldKeyMatcherWouldMatch:        false  // ('ƒ').toLowerCase() === 'f'  → the 
 Screenshot: harness log line `last keydown: key="ƒ" code=KeyF shift=true alt=true` with the widget
 menu open. NOTE: the headless preview cannot inject a real OS Option+F keystroke, so the synthetic
 event carries the macOS `e.key` value; final manual macOS keypress confirmation is the user's.
+
+## Phase 2 — Landing favicon
+
+Monogram **"S"** in the landing palette (graphite `#18181b` rounded square, `#fafafa` letter — same
+accent as the site logo). Source `docs/public/icon.svg`; rasters generated at 32px + 180px;
+`favicon.ico` built as a 32×32 PNG-in-ICO container. Head links use Vite `%BASE_URL%` so they resolve
+under the GitHub Pages base `/snaglist/`.
+
+Files: `docs/public/favicon.ico`, `docs/public/icon.svg`, `docs/public/apple-touch-icon.png`.
+Preview of the mark: [`evidence/apple-touch-icon.png`](evidence/apple-touch-icon.png).
+
+### Live verification (after gh-pages deploy)
+
+```
+$ curl -sIL https://mirawision.github.io/snaglist/favicon.ico          → 200
+$ curl -sIL https://mirawision.github.io/snaglist/icon.svg             → 200
+$ curl -sIL https://mirawision.github.io/snaglist/apple-touch-icon.png → 200
+$ curl -s -o /dev/null -w '%{content_type} %{size_download}' .../favicon.ico
+image/vnd.microsoft.icon 1020
+
+# live page <head>:
+<link rel="icon" href="/snaglist/favicon.ico" sizes="32x32" />
+<link rel="icon" type="image/svg+xml" href="/snaglist/icon.svg" />
+<link rel="apple-touch-icon" href="/snaglist/apple-touch-icon.png" />
+<meta name="theme-color" content="#18181b" />
+```
+(The headless preview cannot capture the OS browser-tab strip; the icon is proven served + valid +
+linked. The literal tab glance is the user's.)
