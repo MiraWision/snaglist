@@ -230,6 +230,7 @@ export function createFeedbackWidget(
           : {}),
         ...(input.domPath !== undefined ? { domPath: input.domPath } : {}),
         ...(input.screen !== undefined ? { screen: input.screen } : {}),
+        ...(input.masked !== undefined ? { masked: input.masked } : {}),
         // Reporter + custom mirrored into each issue (present only when
         // configured), so an issue file is self-contained.
         ...(reporter !== undefined ? { reporter } : {}),

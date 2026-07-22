@@ -32,6 +32,22 @@ export interface FeedbackIdentity {
 /** Flat, primitive-only project fields attached to every issue. */
 export type FeedbackCustom = Record<string, string | number | boolean>;
 
+/** Screenshot privacy controls. All optional; off by default (dev). */
+export interface FeedbackPrivacy {
+  /**
+   * Mask `input, textarea, select` values before rendering a screenshot.
+   * Default false. Elements with `data-private` are always masked regardless.
+   */
+  maskInputs?: boolean;
+  /** Extra CSS selectors whose matched elements are masked. */
+  maskSelectors?: string[];
+  /**
+   * Show an "Attach screenshot" consent checkbox (default checked) in the issue
+   * form. When unchecked the issue is sent without a screenshot. Default false.
+   */
+  screenshotConsent?: boolean;
+}
+
 /**
  * Serialized reporter block as it appears in artifacts (snake_case keys).
  * Only provided sub-fields are present; a configured-but-empty identity is null.
@@ -59,6 +75,8 @@ export interface FeedbackWidgetConfig {
    * Default true; set false to disable the offline outbox.
    */
   offlineQueue?: boolean;
+  /** Screenshot privacy: PII masking and screenshot consent. */
+  privacy?: FeedbackPrivacy;
   /** Project slug, written into session.yaml. */
   project: string;
 }
@@ -73,6 +91,11 @@ export interface CaptureIssueInput {
   consoleErrors?: string[];
   /** Full tag path with no classes (element mode). */
   domPath?: string | null;
+  /**
+   * Whether PII masking was applied to this issue's screenshot(s). Emitted as
+   * `masked` in frontmatter; omitted when privacy is not configured.
+   */
+  masked?: boolean;
   /** innerText of the element, trimmed (element mode). */
   elementText?: string | null;
   mode: CaptureMode;

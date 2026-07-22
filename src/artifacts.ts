@@ -126,6 +126,8 @@ export interface IssueMarkdownInput {
   domPath?: string | null;
   elementText?: string | null;
   id: string;
+  /** Whether masking was applied to the screenshot(s); emitted when defined. */
+  masked?: boolean;
   mode: CaptureMode;
   /** Reporter identity mirrored into the issue; `reporter:` block (null empty). */
   reporter?: ReporterMeta | null;
@@ -174,6 +176,10 @@ export function buildIssueMarkdown(input: IssueMarkdownInput): string {
   );
   if (input.screenshots && input.screenshots.length > 1) {
     lines.push(yamlLine("screenshots", input.screenshots));
+  }
+  // Additive: emitted only when privacy is configured (masking attempted).
+  if (input.masked !== undefined) {
+    lines.push(yamlLine("masked", input.masked));
   }
   lines.push(yamlLine("created_at", input.createdAt));
   // Additive reporter / custom blocks: emitted only when provided (identity or

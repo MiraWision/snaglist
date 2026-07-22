@@ -1,5 +1,6 @@
+import { applyMask } from "../mask";
 import { captureArea, captureElement, captureFullPage } from "../screenshot";
-import type { CaptureMode, CaptureResult } from "../types";
+import type { CaptureMode, CaptureResult, FeedbackPrivacy } from "../types";
 import type { FeedbackWidgetCore } from "../widget";
 import { annotateBlob } from "./annotate";
 import {
@@ -65,6 +66,8 @@ interface Draft {
   pending: number;
   /** In-flight capture tasks, awaited before an issue is sent. */
   captures: Promise<void>[];
+  /** True if masking redacted at least one element on any shot. */
+  maskedAny: boolean;
 }
 
 function defaultCategories(s: FeedbackWidgetStrings): IssueCategory[] {
@@ -163,6 +166,12 @@ export function mountFeedbackWidget(
   };
   const categories = uiConfig.categories ?? defaultCategories(strings);
   const container = uiConfig.container ?? document.body;
+  // Privacy comes from the core config (masking + consent). `data-private`
+  // masking runs even with no privacy config; the `masked` frontmatter flag is
+  // emitted whenever privacy is explicitly configured.
+  const privacy: FeedbackPrivacy = core.config.privacy ?? {};
+  const privacyConfigured = core.config.privacy !== undefined;
+  const consentEnabled = privacy.screenshotConsent === true;
   const hotkey =
     uiConfig.hotkey === null ? null : (uiConfig.hotkey ?? DEFAULT_HOTKEY);
 
@@ -238,13 +247,31 @@ export function mountFeedbackWidget(
   });
   const commentBox = el("textarea");
   commentBox.placeholder = strings.commentPlaceholder;
+  // Screenshot consent (beta): a checked-by-default "Attach screenshot" toggle.
+  // Unchecked → the issue is sent without any screenshot (screenshot: null).
+  const consentRow = el("label", "consent");
+  const consentBox = el("input");
+  consentBox.type = "checkbox";
+  consentBox.checked = true;
+  const consentText = el("span");
+  consentText.textContent = strings.attachScreenshot;
+  consentRow.append(consentBox, consentText);
+  consentRow.style.display = consentEnabled ? "flex" : "none";
   const actions = el("div", "dialog-actions");
   const cancelBtn = el("button");
   cancelBtn.textContent = strings.cancel;
   const sendBtn = el("button", "send");
   sendBtn.textContent = strings.send;
   actions.append(cancelBtn, sendBtn);
-  panel.append(panelTitle, panelContext, thumbs, chips, commentBox, actions);
+  panel.append(
+    panelTitle,
+    panelContext,
+    thumbs,
+    chips,
+    commentBox,
+    consentRow,
+    actions
+  );
 
   function syncChips(): void {
     for (const chip of chipButtons) {
@@ -464,6 +491,7 @@ export function mountFeedbackWidget(
       return draft;
     }
     discardDraft();
+    consentBox.checked = true; // fresh draft → consent defaults to checked
     draft = {
       mode,
       meta,
@@ -474,6 +502,7 @@ export function mountFeedbackWidget(
       category: null,
       pending: 0,
       captures: [],
+      maskedAny: false,
     };
     return draft;
   }
@@ -491,7 +520,18 @@ export function mountFeedbackWidget(
     renderPanel();
     const task = (async () => {
       try {
-        const shot = await work();
+        // Mask PII on the live DOM for the duration of the render, then restore
+        // it exactly. Masking must wrap the html-to-image render inside work().
+        const mask = applyMask(privacy);
+        let shot: Blob;
+        try {
+          shot = await work();
+        } finally {
+          mask.restore();
+        }
+        if (mask.count > 0) {
+          owner.maskedAny = true;
+        }
         if (draft !== owner) {
           return; // draft was cancelled or replaced mid-capture
         }
@@ -671,14 +711,29 @@ export function mountFeedbackWidget(
         return; // draft was cancelled while we waited
       }
     }
+    // Consent: when the reporter unchecks "Attach screenshot", the issue is
+    // sent with no screenshot (the format already supports screenshot: null).
+    const attachShots = !(consentEnabled && !consentBox.checked);
+    const shots = attachShots ? current.shots : [];
+    // `masked` reflects the shipped screenshots: omitted with no screenshot or
+    // when privacy is not configured; else whether anything was redacted.
+    const masked =
+      shots.length === 0
+        ? undefined
+        : current.maskedAny
+          ? true
+          : privacyConfigured
+            ? false
+            : undefined;
     try {
       const meta = current.meta;
       const result = await core.captureIssue({
         comment,
-        screenshots: current.shots,
+        screenshots: shots,
         selector: current.selector,
         mode: current.mode,
         ...(current.category ? { category: current.category } : {}),
+        ...(masked !== undefined ? { masked } : {}),
         // Present for every mode (null when not element) so the artifact fields
         // are always there.
         selectorStrategy: meta?.selectorStrategy ?? null,

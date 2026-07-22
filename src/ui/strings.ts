@@ -6,6 +6,7 @@ export interface FeedbackWidgetStrings {
   annotateDone: string;
   annotateText: string;
   annotateUndo: string;
+  attachScreenshot: string;
   buttonLabel: string;
   cancel: string;
   capturing: string;
@@ -34,6 +35,7 @@ export const DEFAULT_STRINGS: FeedbackWidgetStrings = {
   annotateDone: "Done",
   annotateText: "Text",
   annotateUndo: "Undo",
+  attachScreenshot: "Attach screenshot",
   buttonLabel: "Feedback",
   cancel: "Cancel",
   capturing: "Capturing...",

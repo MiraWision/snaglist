@@ -182,4 +182,42 @@ issues: []
 ```
 
 ---
-<!-- Phase 3+ evidence appended below as work lands. -->
+## Phase 3 — PII masking + consent
+
+Chosen approach: **Option A** (transient live-DOM mask + guaranteed restore) — html-to-image can't
+mask its internal clone (Phase 0). New `src/mask.ts`: `applyMask(privacy)` collects targets
+(`[data-private]` always; `input,textarea,select` when `maskInputs`; `maskSelectors`), turns each
+into a solid redacted block (`color: transparent !important` + flat fill) and returns
+`{ count, restore() }`. Restore writes back the **entire prior `style` attribute** (or removes it),
+so the live DOM is byte-identical. Config: `privacy: { maskInputs?, maskSelectors?[], screenshotConsent? }`.
+Consent checkbox "Attach screenshot" (default checked) in the issue form; unchecked → `screenshot: null`.
+Additive `masked: true|false` in frontmatter (emitted only when privacy is configured).
+
+### 3.1 Tests (jsdom)
+
+```
+$ npm test    # Test Files 8 passed (8) / Tests 68 passed (68)
+```
+New `test/mask.test.ts` (7): maskInputs gating, `[data-private]` always, maskSelectors, widget-UI
+excluded, **innerHTML byte-identical after restore** (incl. pre-existing inline style, and no stray
+`style=""`), idempotent restore. `test/artifacts.test.ts` +1: `masked` emitted only when defined.
+
+### 3.2 Visual before/after (real html-to-image render)
+
+Harness `evidence/mask-harness.html` (form with name, email, card `4242 4242 4242 4242`, plan select,
+and a `data-private` note) served via `evidence/serve.mjs`, driven in a real browser:
+
+```js
+> await window.run()
+{ maskedCount: 5, identicalAfterRestore: true }   // 3 inputs + 1 select + 1 data-private
+```
+
+- **Before:** [`evidence/mask-before.png`](evidence/mask-before.png) — all values legible.
+- **After:** [`evidence/mask-after.png`](evidence/mask-after.png) — every value is a solid redacted
+  block; **labels still visible, layout unchanged** (same box sizes/positions). 924×669 @ DPR 2.
+- `identicalAfterRestore: true` → live DOM innerHTML is unchanged after capture.
+
+Reproduce: `node evidence/serve.mjs` → open `http://localhost:5175/` → run `window.run()`.
+
+---
+<!-- Phase 4+ evidence appended below as work lands. -->

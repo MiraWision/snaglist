@@ -259,6 +259,22 @@ export function widgetStyles(theme: UiTheme): string {
   display: flex;
   gap: 6px;
 }
+.consent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+.consent input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: ${theme.accentColor};
+}
 .chip {
   border: 1px solid #d1d5db;
   background: none;

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>snaglist — PII masking harness</title>
+    <style>
+      body { font-family: -apple-system, system-ui, sans-serif; margin: 24px; color: #111; background: #fff; }
+      h1 { font-size: 18px; }
+      #target { max-width: 420px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }
+      .field { margin-bottom: 12px; }
+      label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+      input, select { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+      .card { margin-top: 8px; padding: 10px; background: #f3f4f6; border-radius: 8px; font-size: 13px; }
+      .results { display: flex; gap: 24px; margin-top: 28px; flex-wrap: wrap; }
+      figure { margin: 0; }
+      figcaption { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+      .results img { width: 420px; border: 1px solid #e5e7eb; border-radius: 8px; display: block; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <h1>PII masking harness</h1>
+    <div id="target">
+      <div class="field">
+        <label>Full name</label>
+        <input id="name" value="Anna Karlsson" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input id="email" value="anna.karlsson@example.com" />
+      </div>
+      <div class="field">
+        <label>Card number</label>
+        <input id="card" value="4242 4242 4242 4242" />
+      </div>
+      <div class="field">
+        <label>Plan</label>
+        <select><option selected>Gold — $49/mo</option></select>
+      </div>
+      <div class="card" data-private>Internal note: churn risk, VIP — do not screenshot</div>
+    </div>
+
+    <!-- data-feedback-widget: excluded from the html-to-image render so the
+         (initially empty) result images never break serialization. -->
+    <div class="results" data-feedback-widget>
+      <figure><figcaption>Before (unmasked)</figcaption><img id="before" alt="before" /></figure>
+      <figure><figcaption>After (maskInputs + data-private)</figcaption><img id="after" alt="after" /></figure>
+    </div>
+
+    <script src="../dist/snaglist.global.js"></script>
+    <script>
+      async function run() {
+        const target = document.getElementById("target");
+        const htmlBefore = target.innerHTML;
+
+        const before = await Snaglist.captureElement(target);
+        document.getElementById("before").src = URL.createObjectURL(before);
+
+        const mask = Snaglist.applyMask({ maskInputs: true });
+        const maskedCount = mask.count;
+        let masked;
+        try {
+          masked = await Snaglist.captureElement(target);
+        } finally {
+          mask.restore();
+        }
+        document.getElementById("after").src = URL.createObjectURL(masked);
+
+        window.__result = {
+          maskedCount,
+          identicalAfterRestore: target.innerHTML === htmlBefore,
+        };
+        return window.__result;
+      }
+      window.run = run;
+    </script>
+  </body>
+</html>

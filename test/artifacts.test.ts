@@ -310,6 +310,37 @@ describe("buildIssueMarkdown", () => {
     expect("custom" in fm).toBe(false);
   });
 
+  it("emits the masked flag only when defined", () => {
+    const withMasked = parse(
+      buildIssueMarkdown({
+        id: "12",
+        url: "/app",
+        selector: null,
+        mode: "fullpage",
+        viewport: "1512x982",
+        screenshot: "12-x.png",
+        masked: true,
+        createdAt: "2026-07-22T10:00:00Z",
+        comment: "Masked shot",
+      }).split("---\n")[1]
+    );
+    expect(withMasked.masked).toBe(true);
+
+    const withoutMasked = parse(
+      buildIssueMarkdown({
+        id: "13",
+        url: "/app",
+        selector: null,
+        mode: "fullpage",
+        viewport: "1512x982",
+        screenshot: "13-x.png",
+        createdAt: "2026-07-22T10:00:00Z",
+        comment: "No privacy config",
+      }).split("---\n")[1]
+    );
+    expect("masked" in withoutMasked).toBe(false);
+  });
+
   it("emits session-level reporter only when present", () => {
     const bare = parse(buildSessionYaml(state));
     expect("reporter" in bare).toBe(false);

@@ -1,6 +1,8 @@
 export { buildIssueMarkdown, buildSessionYaml } from "./artifacts";
 export { DownloadConnector } from "./connectors/download";
 export { MemoryConnector } from "./connectors/memory";
+export { applyMask } from "./mask";
+export type { MaskResult } from "./mask";
 export type { BrowserInfo } from "./metadata";
 export { parseUserAgent } from "./metadata";
 export { createOfflineQueue } from "./queue";
@@ -29,6 +31,7 @@ export type {
   FeedbackConnector,
   FeedbackCustom,
   FeedbackIdentity,
+  FeedbackPrivacy,
   FeedbackWidgetConfig,
   IssueIndexEntry,
   ReporterMeta,
