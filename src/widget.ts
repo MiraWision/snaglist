@@ -217,6 +217,14 @@ export function createFeedbackWidget(
     const errorSnapshot = errorCapture.snapshot();
     const actionSnapshot = actionCapture.snapshot();
 
+    // Record-mode frames: a subfolder of numbered PNGs (additive, only when set).
+    const frames = input.frames ?? [];
+    const isRecording = input.recording === true && frames.length > 0;
+    const framesDir = isRecording ? `${id}-${slug}-frames` : null;
+    const framePaths = isRecording
+      ? frames.map((_, i) => `${framesDir}/${String(i + 1).padStart(2, "0")}.png`)
+      : [];
+
     const entry: IssueIndexEntry = {
       id,
       file: mdPath,
@@ -224,6 +232,7 @@ export function createFeedbackWidget(
       ...(pngPaths.length > 1 ? { screenshots: pngPaths } : {}),
       ...(input.category ? { category: input.category } : {}),
       ...(input.screen ? { screen: input.screen } : {}),
+      ...(isRecording ? { frames: frames.length } : {}),
       url: env.url,
       selector: input.selector ?? null,
       created_at: createdAt,
@@ -234,6 +243,9 @@ export function createFeedbackWidget(
     const files: ArtifactFile[] = shots.map((shot, i) =>
       screenshotFile(pngPaths[i], shot)
     );
+    for (let i = 0; i < frames.length && isRecording; i++) {
+      files.push(screenshotFile(framePaths[i], frames[i]));
+    }
     files.push(
       issueMarkdownFile(mdPath, {
         id,
@@ -271,6 +283,14 @@ export function createFeedbackWidget(
         actions: actionSnapshot,
         actionsAt: createdAtMs,
         actionsCount: actionSnapshot.length,
+        // Record mode: recording flag + frames dir (only for recordings).
+        ...(isRecording
+          ? {
+              recording: true,
+              framesCount: frames.length,
+              framesDir: framesDir as string,
+            }
+          : {}),
         createdAt,
         comment,
       })

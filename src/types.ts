@@ -45,6 +45,16 @@ export interface FeedbackActionsConfig {
   capturePasswords?: boolean;
 }
 
+/** Record mode: frames captured on each significant action. */
+export interface FeedbackRecordingConfig {
+  /** Show the Record button. Default true. */
+  enabled?: boolean;
+  /** Max frames captured; after this the trail continues without frames. Default 30. */
+  maxFrames?: number;
+  /** Minimum ms between frames (throttle). Default 650 (Phase-0 measure × 1.5). */
+  frameMinInterval?: number;
+}
+
 /** Page-error capture controls. */
 export interface FeedbackErrorConfig {
   /** Capture console.error / uncaught errors / rejections. Default true. */
@@ -112,6 +122,8 @@ export interface FeedbackWidgetConfig {
   privacy?: FeedbackPrivacy;
   /** Project slug, written into session.yaml. */
   project: string;
+  /** Record mode (frames captured per action). Default enabled. */
+  recording?: FeedbackRecordingConfig;
   /**
    * Global shortcut that toggles the widget, e.g. "Shift+Alt+F" (modifiers +
    * one letter/digit; the key is matched by physical `event.code`, so it is
@@ -129,6 +141,10 @@ export interface CaptureIssueInput {
   comment: string;
   /** Full tag path with no classes (element mode). */
   domPath?: string | null;
+  /** Record-mode frames, in order (start + per-action). */
+  frames?: Blob[];
+  /** Whether this issue is a recording (frames attached). */
+  recording?: boolean;
   /**
    * Whether PII masking was applied to this issue's screenshot(s). Emitted as
    * `masked` in frontmatter; omitted when privacy is not configured.
@@ -155,6 +171,8 @@ export interface IssueIndexEntry {
   /** Optional triage category; emitted only when set. */
   category?: string;
   created_at: string;
+  /** Record mode: number of frames; emitted only when set. */
+  frames?: number;
   /** Markdown file name, e.g. "01-broken-header.md". */
   file: string;
   /** Nearest data-screen | data-page value for grouping; emitted when set. */

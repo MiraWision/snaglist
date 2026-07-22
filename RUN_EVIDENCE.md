@@ -604,3 +604,56 @@ intact (SPA navigated to `/animals/128?token=…`). NOTE: the URL query token ap
 pre-existing `url:` frontmatter field (full-URL capture for reconstruction), never in the trail;
 stripping query from that existing field would be a non-additive change to an existing field → left as-is
 and flagged here.
+
+## Phase 2 — Record mode (frames by action)
+
+`config.recording {enabled,maxFrames=30,frameMinInterval=650}`. A `Record steps` menu item starts
+recording; a pulsing red dot on the FAB + a top bar (`Recording · N frames` / `Stop & describe` /
+`Cancel`) indicate state. A frame (masked full-page shot) is captured at start and on each
+click/navigate/submit (NOT type), throttled by `frameMinInterval`, capped at `maxFrames` (then the
+trail continues frameless, indicator shows the limit). Frame capture is deferred a tick so the action's
+DOM effect lands first. Frames tag the action-trail records (`record.frame`) → `## Actions` lines get
+`— frame NN`. `src/ui/record.ts` `createRecorder`.
+
+Format (additive): `NN-slug.png` (moment of Stop) + `NN-slug-frames/01.png…`; frontmatter
+`recording: true` + `frames_count` + `frames_dir`; session index `frames: N`. The CLI/LocalConnector now
+accept a single `frames/` subfolder (still traversal-safe; `mkdir` on dirname).
+
+### 2.1 Tests
+
+```
+$ npm run type-check   # clean
+$ npm test             # Test Files 14 passed (14) / Tests 126 passed (126)
+```
+`test/record.test.ts` (5, mocked capture): start frame, per-action frame + `record.frame` linking, type
+never frames, **maxFrames cap → trail continues (`atLimit`)**, frameMinInterval throttle, stop returns
+frames / cancel discards. `test/artifacts.test.ts`: `recording`/`frames_count`/`frames_dir` frontmatter +
+`— frame NN` Actions + session `frames`. `test/capture.test.ts`: frame files at `NN-slug-frames/NN.png`.
+`test/cli.test.ts`: accepts `01-x-frames/02.png`, rejects deep nesting / traversal.
+
+### 2.2 Browser E2E (evidence/record-harness.html + real `snaglist dev`)
+
+Record run on a mini-SPA with a sequence bug (discount lost after cart→checkout→cart): start + Apply +
+Checkout + Cart + type + Stop. On-disk session `record-e2e/.snaglist/session-2026-07-22-qov7/`:
+
+```
+01-discount-is-lost-after-navigating-cart.md          # recording:true, frames_count:3, frames_dir:…
+01-discount-is-lost-after-navigating-cart.png         # final (Stop) screenshot
+01-discount-is-lost-after-navigating-cart-frames/01.png 02.png 03.png
+session.yaml                                          # issue frames: 3
+```
+`## Actions` (numbering matches the files):
+```
+- click #apply ("Apply") — frame 02
+- click #to-checkout ("Checkout") — frame 03
+- navigate /… → /checkout
+- click #to-cart ("Cart")
+- navigate /checkout → /cart
+- type (6 chars) #code                                # type: no frame
+```
+Frames visually match the states (in evidence): `01.png` Cart **$100** → `02.png` Cart **$80** (Apply)
+→ `03.png` Checkout **$80**. Masking on frames: [`evidence/record-e2e/masked-frame.png`](evidence/record-e2e/masked-frame.png)
+shows the discount field redacted (maskedCount 1, live value restored). No frames outside record mode
+(the Phase-1 `actions-issue.md` and demo-app issues carry no `frames_dir`). Note: under fast synthetic
+driving some frames drop (the capture serialize/throttle guard); at human pace with the 650ms default
+it is consistent.

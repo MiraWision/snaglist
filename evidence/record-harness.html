@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>snaglist — record mode harness</title>
+    <style>
+      body { font-family: -apple-system, system-ui, sans-serif; margin: 24px; color: #18181b; }
+      nav a { margin-right: 12px; }
+      .view { margin-top: 16px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 10px; }
+      input { padding: 8px; width: 260px; }
+      .price { font-size: 22px; font-weight: 700; }
+      button { padding: 8px 14px; }
+    </style>
+  </head>
+  <body>
+    <h2 id="title">Cart</h2>
+    <nav>
+      <a id="to-cart" href="#/cart">Cart</a>
+      <a id="to-checkout" href="#/checkout">Checkout</a>
+    </nav>
+    <div class="view">
+      <label>Discount code: <input id="code" type="text" placeholder="code" /></label>
+      <button id="apply" type="button">Apply</button>
+      <p class="price" id="total">Total: $100</p>
+    </div>
+
+    <script src="../dist/snaglist.global.js"></script>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const maxFrames = Number(params.get("max") || 30);
+
+      // tiny hash SPA + a "sequence" bug: applying a code then navigating away
+      // and back loses the discount (value reset).
+      let discount = 0;
+      function render() {
+        document.getElementById("total").textContent = `Total: $${100 - discount}`;
+      }
+      function go(path) { history.pushState({}, "", path); document.getElementById("title").textContent = path.includes("checkout") ? "Checkout" : "Cart"; }
+      document.getElementById("to-cart").addEventListener("click", (e) => { e.preventDefault(); go("/cart"); discount = 0; render(); }); // BUG: nav resets discount
+      document.getElementById("to-checkout").addEventListener("click", (e) => { e.preventDefault(); go("/checkout"); });
+      document.getElementById("apply").addEventListener("click", () => { discount = 20; render(); });
+
+      const core = Snaglist.createFeedbackWidget({
+        project: "acme",
+        connectors: [new Snaglist.LocalConnector()],
+        recording: { maxFrames, frameMinInterval: 0 }, // frame each spaced action for the test
+      });
+      Snaglist.mountFeedbackWidget(core);
+      const shadow = document.querySelector("[data-feedback-widget]").shadowRoot;
+      window.__shadow = shadow;
+      window.__core = core;
+
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      // click a menu item by its visible label
+      function menuClick(label) {
+        [...shadow.querySelectorAll(".menu button")].find((b) => b.textContent.includes(label)).click();
+      }
+      window.recState = () => ({
+        recording: shadow.querySelector(".rec-dot").style.display !== "none",
+        barText: shadow.querySelector(".rec-bar-text")?.textContent,
+      });
+      // Full record run: start → spaced actions → stop → describe → send
+      window.runRecord = async (actions) => {
+        shadow.querySelector(".fab").click();          // open menu
+        menuClick("Record");                            // start recording (captures frame 01)
+        await wait(700);
+        for (const step of actions) { step(); await wait(700); } // each spaced so a frame lands
+        shadow.querySelector(".rec-stop").click();      // Stop & describe → panel opens, final capture
+        await wait(700);
+        const ta = shadow.querySelector("textarea");
+        ta.value = "Discount is lost after navigating cart → checkout → cart";
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        shadow.querySelector(".send").click();
+        await wait(500);
+        return { session: core.getSession().session_id, frameCount: shadow.querySelectorAll(".frame-thumb").length };
+      };
+      window.steps = {
+        apply: () => document.getElementById("apply").click(),
+        checkout: () => document.getElementById("to-checkout").click(),
+        cart: () => document.getElementById("to-cart").click(),
+        type: () => { const c = document.getElementById("code"); c.value = "SAVE20"; c.dispatchEvent(new Event("input", { bubbles: true })); },
+      };
+    </script>
+  </body>
+</html>

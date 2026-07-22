@@ -1,0 +1,141 @@
+import type { ActionCapture, ActionRecord } from "../actions";
+import { applyMask } from "../mask";
+import { captureFullPage } from "../screenshot";
+import type { FeedbackPrivacy } from "../types";
+
+/**
+ * Record mode: captures a frame (full-page screenshot) at the start of a
+ * recording and on each click / navigate / submit (NOT type), throttled and
+ * capped. Frames are tagged onto the action-trail records (`record.frame`) so
+ * the `## Actions` lines get a `— frame NN` suffix. Frames respect privacy
+ * masking. Frame capture is deferred a tick so the action's DOM effect is
+ * applied before the shot.
+ */
+
+const FRAME_DEFER_MS = 60;
+
+export interface RecorderOptions {
+  actions: ActionCapture;
+  maxFrames: number;
+  frameMinInterval: number;
+  privacy: FeedbackPrivacy;
+  /** Called whenever recording/frame state changes (for the indicator). */
+  onChange?: () => void;
+  now?: () => number;
+}
+
+export interface Recorder {
+  readonly recording: boolean;
+  readonly frameCount: number;
+  readonly maxFrames: number;
+  readonly atLimit: boolean;
+  /** True if masking redacted anything on any captured frame. */
+  readonly maskedAny: boolean;
+  /** Begin recording and capture the initial frame. */
+  start(): Promise<void>;
+  /** Stop and return the captured frames (in order). */
+  stop(): Blob[];
+  /** Discard the recording; returns nothing. */
+  cancel(): void;
+}
+
+export function createRecorder(options: RecorderOptions): Recorder {
+  const now = options.now ?? (() => Date.now());
+  let recording = false;
+  let frames: Blob[] = [];
+  let lastFrameTs = 0;
+  let capturing = false;
+  let maskedAny = false;
+  let unsubscribe: (() => void) | null = null;
+
+  async function captureFrame(record: ActionRecord | null): Promise<void> {
+    if (!recording || capturing || frames.length >= options.maxFrames) {
+      return;
+    }
+    capturing = true;
+    lastFrameTs = now(); // reserve the throttle window at capture start
+    try {
+      const mask = applyMask(options.privacy);
+      let blob: Blob;
+      try {
+        blob = await captureFullPage();
+      } finally {
+        mask.restore();
+      }
+      if (mask.count > 0) {
+        maskedAny = true;
+      }
+      if (!recording) {
+        return; // cancelled mid-capture
+      }
+      frames.push(blob);
+      if (record) {
+        // Link this frame to the action line (1-based; frame 01 = start state).
+        record.frame = frames.length;
+      }
+    } catch (error) {
+      console.error("[snaglist] frame capture failed:", error);
+    } finally {
+      capturing = false;
+      options.onChange?.();
+    }
+  }
+
+  return {
+    get recording() {
+      return recording;
+    },
+    get frameCount() {
+      return frames.length;
+    },
+    get maxFrames() {
+      return options.maxFrames;
+    },
+    get atLimit() {
+      return frames.length >= options.maxFrames;
+    },
+    get maskedAny() {
+      return maskedAny;
+    },
+    async start() {
+      recording = true;
+      frames = [];
+      lastFrameTs = 0;
+      maskedAny = false;
+      options.onChange?.();
+      await captureFrame(null); // initial state → frame 01
+      unsubscribe = options.actions.subscribe((record) => {
+        if (record.kind === "type" || !recording) {
+          return; // typing never triggers a frame
+        }
+        if (frames.length >= options.maxFrames) {
+          options.onChange?.(); // at the cap: trail continues, indicator updates
+          return;
+        }
+        if (now() - lastFrameTs < options.frameMinInterval) {
+          return; // throttled → action stays in the trail without a frame
+        }
+        // Defer so the click/navigation effect is applied before the shot.
+        setTimeout(() => {
+          captureFrame(record);
+        }, FRAME_DEFER_MS);
+      });
+    },
+    stop() {
+      recording = false;
+      unsubscribe?.();
+      unsubscribe = null;
+      const result = frames;
+      frames = [];
+      options.onChange?.();
+      return result;
+    },
+    cancel() {
+      recording = false;
+      unsubscribe?.();
+      unsubscribe = null;
+      frames = [];
+      options.onChange?.();
+    },
+  };
+}

@@ -255,6 +255,81 @@ export function widgetStyles(theme: UiTheme): string {
 .thumb-pending:hover {
   border-color: #e5e7eb;
 }
+.frame-thumb {
+  cursor: default;
+}
+.frame-thumb:hover {
+  border-color: #e5e7eb;
+}
+.frame-num {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  background: rgba(17, 17, 17, 0.72);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.rec-dot {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #dc2626;
+  box-shadow: 0 0 0 2px #fff;
+  animation: fbw-pulse 1.2s ease-in-out infinite;
+}
+@keyframes fbw-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.rec-bar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(17, 17, 17, 0.92);
+  color: #fff;
+  font-size: 13px;
+  padding: 7px 8px 7px 14px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  pointer-events: auto;
+}
+.rec-bar-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #dc2626;
+  animation: fbw-pulse 1.2s ease-in-out infinite;
+}
+.rec-bar-text {
+  white-space: nowrap;
+}
+.rec-bar button {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.rec-stop {
+  background: #fff;
+  color: #111;
+  font-weight: 600;
+}
+.rec-cancel {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
 .chips {
   display: flex;
   gap: 6px;

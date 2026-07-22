@@ -393,6 +393,46 @@ describe("buildIssueMarkdown", () => {
     expect("masked" in withoutMasked).toBe(false);
   });
 
+  it("emits record-mode frontmatter + frame-tagged Actions", () => {
+    const at = 100_000;
+    const md = buildIssueMarkdown({
+      id: "03",
+      url: "/checkout",
+      selector: null,
+      mode: "fullpage",
+      viewport: "1512x982",
+      screenshot: "03-checkout-bug.png",
+      recording: true,
+      framesCount: 3,
+      framesDir: "03-checkout-bug-frames",
+      actionsAt: at,
+      actionsCount: 2,
+      actions: [
+        { ts: at - 24_000, kind: "click", selector: 'a[href="/checkout"]', frame: 2 },
+        { ts: at - 18_000, kind: "submit", selector: "form#payment", frame: 3 },
+      ],
+      createdAt: "2026-07-22T10:00:00Z",
+      comment: "Checkout breaks after re-navigation",
+    });
+    const fm = parse(md.split("---\n")[1]);
+    expect(fm.recording).toBe(true);
+    expect(fm.frames_count).toBe(3);
+    expect(fm.frames_dir).toBe("03-checkout-bug-frames");
+    expect(md).toContain('- [24s before report] click a[href="/checkout"] — frame 02');
+    expect(md).toContain("- [18s before report] submit form#payment — frame 03");
+  });
+
+  it("emits `frames` in the session index only when set", () => {
+    const withFrames = parse(
+      buildSessionYaml({
+        ...state,
+        issues: [{ ...state.issues[0], frames: 4 }],
+      })
+    );
+    expect(withFrames.issues[0].frames).toBe(4);
+    expect("frames" in parse(buildSessionYaml(state)).issues[0]).toBe(false);
+  });
+
   it("emits session-level reporter only when present", () => {
     const bare = parse(buildSessionYaml(state));
     expect("reporter" in bare).toBe(false);

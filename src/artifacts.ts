@@ -110,6 +110,10 @@ function issueEntries(issue: IssueIndexEntry): [string, YamlValue][] {
   if (issue.screen) {
     entries.push(["screen", issue.screen]);
   }
+  // Additive: record-mode frame count in the index.
+  if (issue.frames !== undefined) {
+    entries.push(["frames", issue.frames]);
+  }
   entries.push(
     ["url", issue.url],
     ["selector", issue.selector],
@@ -128,6 +132,10 @@ export interface IssueMarkdownInput {
   category?: string;
   comment: string;
   createdAt: string;
+  /** Record mode: emitted as `recording`/`frames_count`/`frames_dir`. */
+  recording?: boolean;
+  framesCount?: number;
+  framesDir?: string;
   /** Captured page errors, snapshotted at issue time. */
   errors?: ErrorRecord[];
   /** Issue time (epoch ms) used to compute each error's relative age. */
@@ -201,6 +209,16 @@ export function buildIssueMarkdown(input: IssueMarkdownInput): string {
   // Additive: emitted only when the action trail is engaged (0 when off/none).
   if (input.actionsCount !== undefined) {
     lines.push(yamlLine("actions_count", input.actionsCount));
+  }
+  // Additive: record-mode fields, only for recordings.
+  if (input.recording) {
+    lines.push(yamlLine("recording", true));
+    if (input.framesCount !== undefined) {
+      lines.push(yamlLine("frames_count", input.framesCount));
+    }
+    if (input.framesDir !== undefined) {
+      lines.push(yamlLine("frames_dir", input.framesDir));
+    }
   }
   lines.push(yamlLine("created_at", input.createdAt));
   // Additive reporter / custom blocks: emitted only when provided (identity or

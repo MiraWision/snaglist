@@ -240,6 +240,40 @@ describe("captureIssue", () => {
     warnSpy.mockRestore();
   });
 
+  it("writes record-mode frames into a frames subfolder + index", async () => {
+    const memory = new MemoryConnector();
+    const widget = makeWidget([memory]);
+    const png = (n: number) =>
+      new Blob([new Uint8Array([137, 80, 78, 71, n])], { type: "image/png" });
+    const result = await widget.captureIssue({
+      comment: "Checkout bug via a sequence",
+      mode: "fullpage",
+      screenshot: png(0),
+      recording: true,
+      frames: [png(1), png(2), png(3)],
+    });
+    await result?.delivered;
+    const sessionId = result?.sessionId as string;
+    const paths = memory.getFiles(sessionId).map((f) => f.path);
+    expect(paths).toContain("01-checkout-bug-via-a-sequence.png");
+    expect(paths).toContain("01-checkout-bug-via-a-sequence-frames/01.png");
+    expect(paths).toContain("01-checkout-bug-via-a-sequence-frames/02.png");
+    expect(paths).toContain("01-checkout-bug-via-a-sequence-frames/03.png");
+
+    const md = await (
+      memory.getFiles(sessionId).find((f) => f.path.endsWith(".md")) as ArtifactFile
+    ).blob.text();
+    const fm = parse(md.split("---\n")[1]);
+    expect(fm.recording).toBe(true);
+    expect(fm.frames_count).toBe(3);
+    expect(fm.frames_dir).toBe("01-checkout-bug-via-a-sequence-frames");
+
+    const session = parse(
+      await (memory.getFile(sessionId, "session.yaml") as ArtifactFile).blob.text()
+    );
+    expect(session.issues[0].frames).toBe(3);
+  });
+
   it("returns null and captures nothing when disabled", async () => {
     const memory = new MemoryConnector();
     const warnSpy = vi

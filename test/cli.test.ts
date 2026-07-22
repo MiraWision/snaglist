@@ -12,11 +12,18 @@ describe("resolveTarget", () => {
     expect(t).toBe("/base/session-2026-07-22-ab12/01-x.md");
   });
 
-  it("rejects traversal, absolute paths and bad session ids", () => {
+  it("accepts a single frames subfolder (record mode)", () => {
+    expect(
+      resolveTarget("/base", "session-1", "01-x-frames/02.png")
+    ).toBe("/base/session-1/01-x-frames/02.png");
+  });
+
+  it("rejects traversal, absolute paths, deep nesting and bad session ids", () => {
     const base = "/base";
     expect(resolveTarget(base, "session-1", "../../etc/passwd")).toBeNull();
     expect(resolveTarget(base, "session-1", "/etc/passwd")).toBeNull();
-    expect(resolveTarget(base, "session-1", "a/b.md")).toBeNull(); // no subdirs
+    expect(resolveTarget(base, "session-1", "a/b/c.md")).toBeNull(); // > 1 level
+    expect(resolveTarget(base, "session-1", "frames/../../x")).toBeNull();
     expect(resolveTarget(base, "../evil", "x.md")).toBeNull();
     expect(resolveTarget(base, "notasession", "x.md")).toBeNull();
   });

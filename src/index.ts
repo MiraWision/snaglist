@@ -54,6 +54,7 @@ export type {
   FeedbackErrorConfig,
   FeedbackIdentity,
   FeedbackPrivacy,
+  FeedbackRecordingConfig,
   FeedbackWidgetConfig,
   FeedbackWidgetPreset,
   IssueIndexEntry,

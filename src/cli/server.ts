@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
-import { join, resolve, sep } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 
 /**
  * The `snaglist dev` HTTP sidecar. Browser JS can't write to disk, so the
@@ -18,7 +18,10 @@ export interface DevServerOptions {
 }
 
 const SESSION_ID = /^session-[a-z0-9-]{1,64}$/i;
-const FILE_PATH = /^[A-Za-z0-9][A-Za-z0-9._-]{0,120}$/; // flat names only, no "/"
+// A filename, optionally inside a single subfolder (for record-mode frames,
+// e.g. "01-slug-frames/02.png"). No "..", no absolute, no deep nesting.
+const SEGMENT = "[A-Za-z0-9][A-Za-z0-9._-]{0,120}";
+const FILE_PATH = new RegExp(`^${SEGMENT}(?:/${SEGMENT})?$`);
 const ALLOWED_MIME = new Set(["text/yaml", "text/markdown", "image/png"]);
 const MAX_BASE64 = 25 * 1024 * 1024;
 
@@ -148,7 +151,8 @@ export function createDevServer(options: DevServerOptions = {}): Server {
           return;
         }
         const bytes = Buffer.from(base64, "base64");
-        mkdir(join(absDir, sessionId), { recursive: true })
+        // dirname(target) so a frames/ subfolder is created too.
+        mkdir(dirname(target), { recursive: true })
           .then(() => writeFile(target, bytes))
           .then(() => {
             onFile?.({ sessionId, path: filePath, bytes: bytes.length });

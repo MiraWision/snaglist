@@ -21,7 +21,12 @@ export interface FeedbackWidgetStrings {
   menuElement: string;
   menuFullpage: string;
   menuNoScreenshot: string;
+  menuRecord: string;
   noScreenshot: string;
+  recording: string;
+  recordingCancel: string;
+  recordingLimit: string;
+  recordingStop: string;
   reportProblem: string;
   retry: string;
   saved: string;
@@ -51,7 +56,12 @@ export const DEFAULT_STRINGS: FeedbackWidgetStrings = {
   menuElement: "Select element",
   menuFullpage: "Full page screenshot",
   menuNoScreenshot: "Comment without screenshot",
+  menuRecord: "Record steps",
   noScreenshot: "No screenshot for this issue",
+  recording: "Recording · {id} frames",
+  recordingCancel: "Cancel",
+  recordingLimit: "Frame limit reached ({id})",
+  recordingStop: "Stop & describe",
   reportProblem: "Report a problem",
   retry: "Retry",
   saved: "Issue {id} saved",
