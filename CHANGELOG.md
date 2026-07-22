@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1 — Fix text annotation closing the editor
+
+- Placing text on a screenshot no longer commits and closes the annotation
+  editor. The text tool inserts its input under the cursor, so the browser's
+  synthesized click resolved to the backdrop and tripped the click-to-close
+  handler. Backdrop-close now requires the press to *start* on the backdrop
+  (standard click-outside guard), matching arrow/box behavior.
+
 ## 1.1.0 — Non-blocking capture
 
 - **Capture no longer blocks the panel.** Selecting an element, area or full page

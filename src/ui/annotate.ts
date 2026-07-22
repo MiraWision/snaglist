@@ -307,9 +307,23 @@ export function annotateBlob(
     toolbar.append(undoBtn, spacer, cancelBtn, doneBtn);
 
     // Clicking the dark backdrop (outside canvas and toolbar) commits and
-    // closes, preserving any annotations.
+    // closes, preserving any annotations. Guard against false positives: a
+    // click's target is the common ancestor of its pointerdown and pointerup
+    // targets, so placing text on the canvas (which inserts the input under the
+    // cursor) yields a click that resolves to the overlay even though the press
+    // started on the canvas. Only commit when the press itself began on the
+    // backdrop.
+    let pressedOnBackdrop = false;
+    overlay.addEventListener("pointerdown", (event) => {
+      pressedOnBackdrop =
+        event.target === overlay || event.target === stage;
+    });
     overlay.addEventListener("click", (event) => {
-      if (event.target === overlay || event.target === stage) {
+      const releasedOnBackdrop =
+        event.target === overlay || event.target === stage;
+      const onBackdrop = pressedOnBackdrop && releasedOnBackdrop;
+      pressedOnBackdrop = false;
+      if (onBackdrop) {
         commit();
       }
     });
