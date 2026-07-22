@@ -247,4 +247,56 @@ New `test/preset.test.ts` (7): dev→undefined privacy; beta→maskInputs+consen
 beta-preset UI (masking + consent checkbox + label) is exercised in Phase 5.
 
 ---
-<!-- Phase 5 evidence appended below as work lands. -->
+## Phase 5 — E2E + known limitations
+
+E2E harness `evidence/beta-e2e.html`: mounts the **real widget** via `preset: "beta"` + `identity` +
+`custom`, into a page with a PII form (name / email / card) and a `data-private` note, delivering to a
+`MemoryConnector`. Driven through the actual UI (fab → full page → comment → send) for three issues,
+one with the consent checkbox unchecked. Full artifacts in [`evidence/e2e/`](evidence/e2e/).
+
+Verified end-to-end:
+
+- Button label is **"Report a problem"** (beta preset).
+- Session `session-2026-07-22-4850` has 3 issues; files: `01…png`, `01…md`, `02…png`, `02…md`,
+  `03…md`, `session.yaml` — **no `03…png`** (consent off → PNG not created).
+- **`session.yaml`** carries the session-level `reporter` block.
+- **01 & 02** frontmatter: `screenshot: <png>`, **`masked: true`**, `reporter`, `custom`
+  (`app_version` from `appVersion`).
+- **03** (consent unchecked): **`screenshot: null`**, no `masked`, still has `reporter` + `custom`.
+- The widget's own full-page capture is redacted: [`evidence/e2e/01-header-overlaps-the-nav.png`](evidence/e2e/01-header-overlaps-the-nav.png)
+  shows every form value as a solid block, labels intact.
+- Phase-3 standalone masking evidence: [`evidence/mask-before.png`](evidence/mask-before.png) /
+  [`evidence/mask-after.png`](evidence/mask-after.png).
+
+### Test suite (full)
+
+```
+$ npm run type-check     # clean
+$ npm test               # Test Files 9 passed (9) / Tests 75 passed (75)
+$ npm run build          # ESM + CJS + IIFE (dist/snaglist.global.js), types
+```
+
+### Known limitations
+
+- **Masking is declarative only** (inputs + `data-private` + `maskSelectors`); no content-based PII
+  autodetection (out of scope by design).
+- Masking mutates the live DOM transiently during the capture (Option A) and restores it exactly; a
+  page `MutationObserver` could observe the momentary change. html-to-image exposes no clone hook, so
+  a zero-mutation clone-only approach is not available (Phase 0).
+- Screenshot fidelity follows html-to-image (WebGL / some cross-origin content may not render). In the
+  headless preview a full-page capture takes ~12 s (rAF is shimmed through `setTimeout`); real browsers
+  are much faster.
+- Rate limiting / auth live in the delivery endpoint (see `examples/`), never in core.
+- No inbox / statuses / replies / accounts — one-way capture by design.
+
+---
+
+## Rollout & release status
+
+- **npm:** `snaglist@1.3.0` publish + `npm deprecate sluglist` are **pending the user** (2FA/OTP).
+  Commands in §1.3. Once run, paste `npm view snaglist version` + the `npm install sluglist`
+  deprecation warning here.
+- **GitHub/docs (done):** repo renamed to `MiraWision/snaglist`, docs live at
+  `https://mirawision.github.io/snaglist`.
+- **TruGenix:** switch the dependency `sluglist` → `snaglist` and the import string after 1.3.0 is on
+  npm.
