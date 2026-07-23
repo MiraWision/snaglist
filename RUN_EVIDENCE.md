@@ -21,11 +21,18 @@ $ grep dist/index.html         → canonical/og:url https://sluglist.dev/ ; asse
 $ git ls-files | grep -v CHANGELOG | xargs grep -l mirawision.github.io   → 0
 ```
 
-**Pending (maintainer, manual):** point DNS to GitHub Pages + set the custom domain, then deploy. Live
-acceptance to paste here once DNS is up: `curl -sI https://sluglist.dev` → 200 HTTPS; `curl -sI
-https://mirawision.github.io/sluglist/` → 301 → sluglist.dev; two consecutive deploys keep the CNAME.
-> Note: deploying `base:"/"` publishes the site at the domain root; the old `github.io/sluglist/` URL
-> only resolves once the custom domain is configured (Pages redirects it then). See checkpoint.
+**Live (deployed + DNS active):**
+
+```
+$ curl -s https://sluglist.dev/            → <title>sluglist — visual feedback that your agent fixes</title>
+                                             body: "Visual feedback, one line in."  "npm install sluglist"
+                                             canonical + og:url = https://sluglist.dev/
+$ curl -o/dev/null -w '%{http_code}' https://sluglist.dev/{,favicon.ico,icon.svg,apple-touch-icon.png,
+    og-image.png,sitemap.xml,robots.txt}   → 200 200 200 200 200 200 200
+$ curl -sI https://mirawision.github.io/sluglist/   → 301 → https://sluglist.dev/
+$ gh api …/pages -q .cname                 → sluglist.dev   (HTTPS enforced; CNAME shipped from public/
+                                             so every deploy preserves the custom domain)
+```
 
 ## Phase 2 — Format versioning + SPEC.md
 
