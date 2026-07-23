@@ -388,6 +388,21 @@ export function mountFeedbackWidget(
     return panel.style.display === "flex";
   }
 
+  /**
+   * Add another screenshot to the issue being composed: keep the draft (and the
+   * comment typed so far), hide the panel, and reopen the capture menu. Shared
+   * by the "+ Add screenshot" button and the global shortcut while a draft is open.
+   */
+  function addScreenshotToDraft(): void {
+    if (!draft) {
+      return;
+    }
+    draft.comment = commentBox.value;
+    addingToDraft = true;
+    panel.style.display = "none";
+    openMenu();
+  }
+
   function resetModes(): void {
     hint.style.display = "none";
     highlight.style.display = "none";
@@ -555,15 +570,10 @@ export function mountFeedbackWidget(
     const addBtn = el("button", "add-shot");
     addBtn.type = "button";
     addBtn.textContent = strings.addScreenshot;
-    addBtn.addEventListener("click", () => {
-      if (!draft) {
-        return;
-      }
-      draft.comment = commentBox.value;
-      addingToDraft = true;
-      panel.style.display = "none";
-      openMenu();
-    });
+    if (shortcutLabel) {
+      addBtn.title = `${strings.addScreenshot} (${shortcutLabel})`;
+    }
+    addBtn.addEventListener("click", addScreenshotToDraft);
     thumbs.appendChild(addBtn);
   }
 
@@ -992,11 +1002,13 @@ export function mountFeedbackWidget(
     if (
       shortcut &&
       matchesShortcut(event, shortcut) &&
-      !isEditableTarget(event) &&
-      !isPanelOpen()
+      !isEditableTarget(event)
     ) {
       event.preventDefault();
-      if (isMenuOpen()) {
+      if (isPanelOpen()) {
+        // Composing an issue: the toggle key adds another screenshot to the draft.
+        addScreenshotToDraft();
+      } else if (isMenuOpen()) {
         closeMenu();
       } else {
         openMenu();
