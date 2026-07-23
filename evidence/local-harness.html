@@ -2,18 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>snaglist — local loop harness</title>
+    <title>sluglist — local loop harness</title>
   </head>
   <body>
     <h1>Local loop harness</h1>
-    <script src="../dist/snaglist.global.js"></script>
+    <script src="../dist/sluglist.global.js"></script>
     <script>
-      const local = new Snaglist.LocalConnector(); // default 127.0.0.1:4477
-      const core = Snaglist.createFeedbackWidget({
+      const local = new Sluglist.LocalConnector(); // default 127.0.0.1:4477
+      const core = Sluglist.createFeedbackWidget({
         project: "acme",
         connectors: [local],
       });
-      Snaglist.mountFeedbackWidget(core);
+      Sluglist.mountFeedbackWidget(core);
       window.__core = core;
 
       window.png = () =>

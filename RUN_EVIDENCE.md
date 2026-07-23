@@ -1,3 +1,122 @@
+# RUN_EVIDENCE — reverse rename `snaglist → sluglist` + landing overhaul
+
+Date: 2026-07-23. Two tasks executed together (the landing depends on the final name). The name is
+now **frozen**: `sluglist`. Older sections below document the prior `sluglist → snaglist` cycle and the
+feature work — kept as history.
+
+## Phase 0 — Pre-flight audit (surface → state → action)
+
+| Surface | State found | Action |
+|---|---|---|
+| npm `sluglist` | versions 1.0.0/1.1.0/1.1.1, **DEPRECATED** "Renamed to snaglist" | un-deprecate + publish 1.6.0 (pending checkpoint) |
+| npm `snaglist` | versions 1.3.0/1.5.0, latest 1.5.0, **not** deprecated | deprecate → "moved to sluglist" (pending checkpoint) |
+| `package.json` name / bin / global | `snaglist` / `snaglist` / `Snaglist` | → `sluglist` / `sluglist` / `Sluglist` ✅ |
+| version | 1.6.0 (uncommitted feature bump over published 1.5.0) | keep 1.6.0 (next minor, > sluglist 1.1.1 and > snaglist 1.5.0) ✅ |
+| default folder | `.snaglist/` | → `.sluglist/` + legacy `.snaglist/` detection ✅ |
+| skill | `skills/snaglist-fix/` | `git mv` → `skills/sluglist-fix/` + `.snaglist` fallback ✅ |
+| GitHub repo | **already `sluglist`** on GitHub (local remote was stale `snaglist.git`; GitHub redirects) | fix local remote ✅ — no repo rename needed |
+| GitHub Pages | `/sluglist/` **200** (live), `/snaglist/` **404**; live title still said "snaglist" | redeploy with sluglist branding (pending) |
+| shortcut source of truth | `DEFAULT_SHORTCUT = "Shift+F"` (`src/shortcut.ts:90`); one stale doc comment said `alt+shift+f` | landing uses `Shift+F`; fixed the stale comment ✅ |
+| local loop (agent story gate) | **REAL** — `sluglist dev` CLI + `LocalConnector` + `sluglist-fix` skill all present & tested | agent story clears its STOP gate ✅ |
+| icon source | `~/Downloads/slug.svg` (vector 512²) + `slug.png` (512²), slug mascot | icon set clears its STOP gate ✅ |
+
+Grep before: 229 `snaglist` occurrences across 44 files. STOP conditions checked: snaglist@1.5.0 is
+merely *ahead* of sluglist@1.1.1 (linear history, not a divergent functionality fork) → **not** a STOP.
+
+## Phase 1 — Code / package / CLI ✅
+
+- Mechanical `snaglist→sluglist`, `Snaglist→Sluglist` across 35 tracked files; `package.json` name,
+  bin, `unpkg`/`jsdelivr` (`dist/sluglist.global.js`), repo/bugs/homepage URLs, keywords
+  (−`snaglist`/`snagging`, +`sluglist`/`slug`). tsup entry `sluglist` + `globalName: "Sluglist"`.
+- Default folder `.sluglist/`; **legacy detection** added to `src/cli/index.ts` (prints a hint if
+  `.snaglist/` exists and `.sluglist/` doesn't; never renames files).
+- **Residual `snaglist` strings are intentional**: `src/cli/index.ts` (the legacy-folder hint) and
+  `skills/sluglist-fix/SKILL.md` (the `.snaglist/` fallback) — the compat feature must name the old
+  folder. Everything else: 0 outside CHANGELOG/README-history/RUN_EVIDENCE.
+
+```
+$ npm run type-check        # clean
+$ npm test                  # Test Files 14 passed (14) / Tests 128 passed (128)
+$ npm run build             # dist/sluglist.global.js 173.68 KB + dist/cli.js + ESM/CJS/dts
+```
+
+Acceptance scenarios (CLI, real `dist/cli.js`, node 20):
+
+```
+# A) legacy .snaglist present, no .sluglist → one-time warning, files untouched
+$ (cwd has .snaglist/)  node dist/cli.js dev --port 4611
+note: found a legacy `.snaglist/` folder. sluglist now writes to `.sluglist/`. Rename it
+(`mv .snaglist .sluglist`) ... or pass `--dir .snaglist` to keep using it.
+sluglist dev listening on http://127.0.0.1:4611
+→ after: `.snaglist` still present, no `.sluglist` created (not auto-renamed)
+
+# B) fresh cwd → POST /put → writes under .sluglist/
+$ node dist/cli.js dev --port 4612
+{"ok":true,"dir":".../fresh/.sluglist"}   # GET /health
+{"ok":true}                                # POST /put session.yaml
+→ .sluglist/session-2026-07-23-ab12/session.yaml   (stdout logged the file)
+```
+
+## Phase 2 — Skill + folder fallback ✅
+
+`git mv skills/snaglist-fix → sluglist-fix`. Triggers: "read feedback" / "fix feedback" / "sluglist" /
+`.sluglist/` present. Algorithm now: use `.sluglist/`, else fall back to a legacy `.snaglist/` and note
+"legacy folder name" in `.done`. Artifact format is name-independent (confirmed: generators in
+`src/artifacts.ts` / `src/reporter.ts` never emit the package name).
+
+## Phase 3 — GitHub remote + docs base + README ✅
+
+- Local remote → `git@github.com:MiraWision/sluglist.git` (GitHub repo already `sluglist`).
+- Docs: `vite.config.ts` base `/sluglist/`, `docs/package.json` name/homepage, lockfile regenerated.
+- README fully renamed + one history line: "*briefly published as `snaglist`; the permanent name is
+  `sluglist`*". No "may be renamed" language anywhere.
+
+## Landing overhaul (React/Vite/Tailwind SPA)
+
+- **Agent story** — new `#agents` section, **first after the hero** (`h2` "Feedback that fixes
+  itself"). 3 steps + two dark terminal blocks (`$ npx sluglist dev` with real CLI stdout; `$ claude`
+  "read feedback and fix it") + the `.done` report block + honest footnote ("works with any agent that
+  reads files; Claude Code via the bundled `sluglist-fix` skill"). Commands verified by running the CLI.
+- **Artifact showcase** — full `01-…md`: every frontmatter key exists in the real generator
+  (`id, url, selector, selector_strategy, selector_unique, mode, category, element_text, dom_path,
+  screen, viewport, screenshot, masked, errors_count, actions_count, recording, frames_count,
+  frames_dir, created_at, reporter`) + `## Errors` (2) + `## Actions` (4, one `— frame 03`) + a session
+  tree with a `…-frames/` folder.
+- **SEO/OG/prerender** — `docs/index.html` gains a static hero+nav inside `#root` (React replaces on
+  mount; Tailwind CSS is a `<link>`, so it styles without JS) + `og:*`, `twitter:card=summary_large_image`,
+  canonical (absolute URLs). `robots.txt` allows all. Verified in the built `dist/index.html`:
+
+```
+$ grep dist/index.html →
+<title>sluglist — visual feedback that your agent fixes</title>
+"Visual feedback, one line in."   "A drop-in widget for dev"   "npm install sluglist"
+og:title / og:description / og:url / og:image(1200×630) / twitter:card / canonical  → all present
+assets + icons rewritten under /sluglist/ ; og-image.png, favicon.ico, icon.svg, apple-touch-icon.png,
+robots.txt all emitted to dist/
+```
+
+- **Icons** — regenerated from `slug.svg`: `icon.svg` (verbatim), `favicon.ico` (16+32, tight-cropped
+  mascot for 16px legibility), `apple-touch-icon.png` (180, mascot on brand-dark), `og-image.png`
+  (1200×630, mascot + "sluglist" + "Visual feedback that your agent fixes"). Head links updated.
+- **Shortcut + name consistency** — every landing mention is `Shift+F` / `⇧F`; `grep snaglist` over
+  docs sources = 0.
+- **Mobile fallback** — `useIsNarrow()` (`matchMedia(max-width:767px)`, no UA sniffing) swaps the live
+  widget for a self-contained 3-screen flow strip + "**desktop-only** — try it on a larger screen".
+  Verified at 375px: fallback shown, live widget not mounted (screenshot in evidence).
+
+Preview verification (vite dev at `/sluglist/`, node 20): 0 console errors; `#agents` DOM confirmed
+(3 steps, 2 terminals, `.done`); mobile fallback confirmed at 375px.
+
+## Pending (external — at checkpoint / post-approval)
+
+- **npm** (2FA-gated, run by maintainer): un-deprecate `sluglist@">=1.0.0 <1.6.0"`, publish
+  `sluglist@1.6.0`, deprecate `snaglist` → "moved to sluglist". No unpublish.
+- **gh-pages deploy** of the new landing; then live `curl` checks (hero text + og tags + icons 200)
+  to be pasted here.
+
+---
+---
+
 # RUN_EVIDENCE — snaglist (rename + beta feedback mode)
 
 External, verifiable artifacts for each phase. Self-report without artifacts = task not done.

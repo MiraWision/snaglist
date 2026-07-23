@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.6.0 — Record mode: manual frames + recording attaches to the open draft
+
+### Renamed back to `sluglist` (permanent)
+
+The package, CLI (`npx sluglist dev`), default folder (`.sluglist/`), standalone global
+(`Sluglist` / `dist/sluglist.global.js`), skill (`sluglist-fix`) and docs are now `sluglist` — the
+final, permanent name (this supersedes the brief `snaglist` naming in 1.3.0). Install
+`npm install sluglist`. Compatibility: `sluglist dev` still detects a legacy `.snaglist/` folder and
+prints a one-time hint (it never renames your files), and the `sluglist-fix` skill falls back to a
+`.snaglist/` folder when no `.sluglist/` exists. The `snaglist` package on npm is deprecated with a
+pointer to `sluglist`.
+
+### Manual frames while recording
+
+- The recording bar gained a **`+ Frame`** button (and the **S** key outside text fields) to snap an
+  extra frame at any moment — for states auto-capture misses (hover popovers, transient toasts).
+  Manual snaps bypass the throttle but still respect `maxFrames`; `Recorder.snap()` is exposed.
+- The recording bar now explains itself: "Frames auto-capture on clicks & navigation" under the
+  frame counter, so it's clear what record mode is doing.
+
+### Recording no longer replaces an open draft
+
+- **Stop & describe** with a draft open (e.g. record mode started from `+ Add screenshot`) now
+  appends the frames to that draft instead of discarding it — screenshots added before the recording
+  are kept, and one issue ships both (`screenshots` + `frames_dir`, no format change).
+- In the panel, a recording renders as a single stacked "deck" tile (tilted cards behind the first
+  frame, red-dot `N frames` badge) next to the regular screenshots. Click expands the numbered frame
+  ribbon; `×` drops the recording from the draft. Screenshots stay annotatable/removable, and
+  `+ Add screenshot` remains available after a recording.
+- Cancelling a recording that was started from an open draft returns to the draft unchanged.
+
+### Other
+
+- Menu reordered by expected frequency of use: Full page → Select area → Select element →
+  Record steps → Comment without screenshot. The `1`–`5` hotkeys now follow the position
+  automatically (no gaps when record mode is disabled).
+- Screenshot consent now covers recording frames too: unchecking "Attach screenshot" sends the
+  issue without frames as well (they are screenshots).
+
+No breaking changes; no artifact format changes.
+
 ## 1.5.0 — Action trail + record mode
 
 ### Action trail (new)

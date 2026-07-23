@@ -2,25 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>snaglist — error capture harness</title>
+    <title>sluglist — error capture harness</title>
   </head>
   <body>
     <h1>Error capture harness</h1>
-    <script src="../dist/snaglist.global.js"></script>
+    <script src="../dist/sluglist.global.js"></script>
     <script>
-      const memory = new Snaglist.MemoryConnector();
-      const core = Snaglist.createFeedbackWidget({
+      const memory = new Sluglist.MemoryConnector();
+      const core = Sluglist.createFeedbackWidget({
         project: "acme",
         connectors: [memory],
         // errors capture defaults on
       });
-      Snaglist.mountFeedbackWidget(core);
+      Sluglist.mountFeedbackWidget(core);
       window.__core = core;
       window.__memory = memory;
 
       // A second widget with capture disabled.
-      const memoryOff = new Snaglist.MemoryConnector();
-      const coreOff = Snaglist.createFeedbackWidget({
+      const memoryOff = new Sluglist.MemoryConnector();
+      const coreOff = Sluglist.createFeedbackWidget({
         project: "acmeoff",
         connectors: [memoryOff],
         errors: { capture: false },

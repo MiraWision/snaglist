@@ -108,7 +108,7 @@ export function resolveShortcut(
     return parsed;
   }
   console.warn(
-    `[snaglist] invalid shortcut ${JSON.stringify(source)}; falling back to "${DEFAULT_SHORTCUT}"`
+    `[sluglist] invalid shortcut ${JSON.stringify(source)}; falling back to "${DEFAULT_SHORTCUT}"`
   );
   return parseShortcut(DEFAULT_SHORTCUT);
 }

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>snaglist — PII masking harness</title>
+    <title>sluglist — PII masking harness</title>
     <style>
       body { font-family: -apple-system, system-ui, sans-serif; margin: 24px; color: #111; background: #fff; }
       h1 { font-size: 18px; }
@@ -47,20 +47,20 @@
       <figure><figcaption>After (maskInputs + data-private)</figcaption><img id="after" alt="after" /></figure>
     </div>
 
-    <script src="../dist/snaglist.global.js"></script>
+    <script src="../dist/sluglist.global.js"></script>
     <script>
       async function run() {
         const target = document.getElementById("target");
         const htmlBefore = target.innerHTML;
 
-        const before = await Snaglist.captureElement(target);
+        const before = await Sluglist.captureElement(target);
         document.getElementById("before").src = URL.createObjectURL(before);
 
-        const mask = Snaglist.applyMask({ maskInputs: true });
+        const mask = Sluglist.applyMask({ maskInputs: true });
         const maskedCount = mask.count;
         let masked;
         try {
-          masked = await Snaglist.captureElement(target);
+          masked = await Sluglist.captureElement(target);
         } finally {
           mask.restore();
         }

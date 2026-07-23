@@ -3,13 +3,13 @@ import { createServer, type Server } from "node:http";
 import { dirname, join, resolve, sep } from "node:path";
 
 /**
- * The `snaglist dev` HTTP sidecar. Browser JS can't write to disk, so the
- * LocalConnector POSTs artifacts here and this writes them into `.snaglist/`.
+ * The `sluglist dev` HTTP sidecar. Browser JS can't write to disk, so the
+ * LocalConnector POSTs artifacts here and this writes them into `.sluglist/`.
  * Binds to 127.0.0.1 only, no auth (local-only by design — documented in README).
  */
 
 export interface DevServerOptions {
-  /** Folder to write into (relative to cwd or absolute). Default ".snaglist". */
+  /** Folder to write into (relative to cwd or absolute). Default ".sluglist". */
   dir?: string;
   /** Bind host. Default 127.0.0.1 (local only). */
   host?: string;
@@ -70,7 +70,7 @@ interface PutBody {
 }
 
 export function createDevServer(options: DevServerOptions = {}): Server {
-  const dir = options.dir ?? ".snaglist";
+  const dir = options.dir ?? ".sluglist";
   const absDir = resolve(dir);
   const onFile = options.onFile;
 

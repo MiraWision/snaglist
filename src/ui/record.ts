@@ -6,7 +6,8 @@ import type { FeedbackPrivacy } from "../types";
 /**
  * Record mode: captures a frame (full-page screenshot) at the start of a
  * recording and on each click / navigate / submit (NOT type), throttled and
- * capped. Frames are tagged onto the action-trail records (`record.frame`) so
+ * capped; the reporter can also snap extra frames manually via `snap()`.
+ * Frames are tagged onto the action-trail records (`record.frame`) so
  * the `## Actions` lines get a `— frame NN` suffix. Frames respect privacy
  * masking. Frame capture is deferred a tick so the action's DOM effect is
  * applied before the shot.
@@ -33,6 +34,11 @@ export interface Recorder {
   readonly maskedAny: boolean;
   /** Begin recording and capture the initial frame. */
   start(): Promise<void>;
+  /**
+   * Manually capture a frame right now (the "+ Frame" button / S key).
+   * Bypasses the action throttle; still respects the frame cap.
+   */
+  snap(): Promise<void>;
   /** Stop and return the captured frames (in order). */
   stop(): Blob[];
   /** Discard the recording; returns nothing. */
@@ -74,7 +80,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
         record.frame = frames.length;
       }
     } catch (error) {
-      console.error("[snaglist] frame capture failed:", error);
+      console.error("[sluglist] frame capture failed:", error);
     } finally {
       capturing = false;
       options.onChange?.();
@@ -120,6 +126,9 @@ export function createRecorder(options: RecorderOptions): Recorder {
           captureFrame(record);
         }, FRAME_DEFER_MS);
       });
+    },
+    async snap() {
+      await captureFrame(null);
     },
     stop() {
       recording = false;

@@ -41,7 +41,7 @@ export interface FeedbackWidgetUiConfig {
   container?: HTMLElement;
   /**
    * Global hotkey that toggles the widget menu, as "modifier+key".
-   * Default "alt+shift+f". Pass null to disable.
+   * Default "Shift+F". Pass null to disable.
    */
   hotkey?: string | null;
   /** Called after an issue is captured (before background delivery settles). */
@@ -88,7 +88,7 @@ const HOST_ATTRIBUTE = "data-feedback-widget";
 const TOAST_MS = 2600;
 const DEFAULT_SHORTCUT = "Shift+F";
 
-// snaglist brand mark: chat bubble + center dot (rendered in currentColor).
+// sluglist brand mark: chat bubble + center dot (rendered in currentColor).
 // viewBox is cropped to the mark from the 512x512 logo so it fills the button.
 const FEEDBACK_ICON_SVG = `<svg viewBox="141 158 230 230" width="23" height="23" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M345 215.7C345 212.71 343.41 208.961 340.22 205.778C337.031 202.597 333.262 201 330.242 201H181.758C177.73 201 174 202.35 171.396 204.659C168.959 206.82 167 210.25 167 215.7V296.675C167 299.665 168.59 303.414 171.78 306.597C174.97 309.778 178.738 311.375 181.758 311.375H229.994L255.97 337.286L281.945 311.375H330.242C333.262 311.375 337.031 309.778 340.22 306.597C343.41 303.414 345 299.665 345 296.675V215.7ZM363 296.675C363 305.535 358.65 313.636 352.932 319.341C347.212 325.047 339.101 329.375 330.242 329.375H289.389L255.97 362.713L222.551 329.375H181.758C172.899 329.375 164.788 325.047 159.068 319.341C153.35 313.636 149 305.535 149 296.675V215.7C149 205.35 152.981 196.931 159.453 191.191C165.758 185.601 173.907 183 181.758 183H330.242C339.101 183 347.212 187.328 352.932 193.034C358.65 198.739 363 206.84 363 215.7V296.675Z"/><path d="M274 256C274 265.941 265.941 274 256 274C246.059 274 238 265.941 238 256C238 246.059 246.059 238 256 238C265.941 238 274 246.059 274 256Z"/></svg>`;
 
@@ -205,12 +205,13 @@ export function mountFeedbackWidget(
 
   const menu = el("div", "menu");
   const menuItems: { button: HTMLButtonElement; run: () => void }[] = [];
-  function menuItem(label: string, key: string, run: () => void) {
+  // The hotkey digit follows the item's position in the menu.
+  function menuItem(label: string, run: () => void) {
     const button = el("button");
     const text = el("span");
     text.textContent = label;
     const kbd = el("kbd");
-    kbd.textContent = key;
+    kbd.textContent = String(menuItems.length + 1);
     button.append(text, kbd);
     button.addEventListener("click", run);
     menu.appendChild(button);
@@ -222,17 +223,29 @@ export function mountFeedbackWidget(
   const areaOverlay = el("div", "area-overlay");
   const areaRect = el("div", "area-rect");
 
-  // Recording bar: shown while record mode is active (status + stop/cancel).
+  // Recording bar: shown while record mode is active (status + what's being
+  // captured + manual frame + stop/cancel).
   const recBar = el("div", "rec-bar");
   const recBarDot = el("span", "rec-bar-dot");
+  const recBarCol = el("span", "rec-bar-col");
   const recBarText = el("span", "rec-bar-text");
+  const recBarHint = el("span", "rec-bar-hint");
+  recBarHint.textContent = strings.recordingHint;
+  recBarCol.append(recBarText, recBarHint);
+  const recSnapBtn = el("button", "rec-snap");
+  recSnapBtn.type = "button";
+  const recSnapText = el("span");
+  recSnapText.textContent = strings.recordingSnap;
+  const recSnapKbd = el("kbd");
+  recSnapKbd.textContent = "S";
+  recSnapBtn.append(recSnapText, recSnapKbd);
   const recStopBtn = el("button", "rec-stop");
   recStopBtn.type = "button";
   recStopBtn.textContent = strings.recordingStop;
   const recCancelBtn = el("button", "rec-cancel");
   recCancelBtn.type = "button";
   recCancelBtn.textContent = strings.recordingCancel;
-  recBar.append(recBarDot, recBarText, recStopBtn, recCancelBtn);
+  recBar.append(recBarDot, recBarCol, recSnapBtn, recStopBtn, recCancelBtn);
   recBar.style.display = "none";
 
   // Corner panel instead of a centered modal: the page stays visible and
@@ -317,6 +330,8 @@ export function mountFeedbackWidget(
 
   let draft: Draft | null = null;
   let addingToDraft = false;
+  // Whether the recording deck in the thumbs row is expanded into the ribbon.
+  let framesExpanded = false;
   let annotating = false;
   let toastTimer: ReturnType<typeof setTimeout> | null = null;
   let hoverTarget: Element | null = null;
@@ -394,6 +409,7 @@ export function mountFeedbackWidget(
     }
     draft = null;
     addingToDraft = false;
+    framesExpanded = false;
   }
 
   // Full (re)open of the panel: sets the comment field and focuses it. Called
@@ -427,21 +443,11 @@ export function mountFeedbackWidget(
       return;
     }
     thumbs.innerHTML = "";
-    // Record mode: show the read-only frame ribbon (numbered), no add/annotate.
-    if (draft.recording) {
-      draft.frameUrls.forEach((url, i) => {
-        const frame = el("div", "thumb frame-thumb");
-        const img = el("img");
-        img.src = url;
-        img.alt = `Frame ${i + 1}`;
-        const num = el("span", "frame-num");
-        num.textContent = String(i + 1).padStart(2, "0");
-        frame.append(img, num);
-        thumbs.appendChild(frame);
-      });
-      return;
-    }
-    if (draft.urls.length === 0 && draft.pending === 0) {
+    if (
+      draft.urls.length === 0 &&
+      draft.pending === 0 &&
+      draft.frameUrls.length === 0
+    ) {
       const empty = el("span", "no-shot");
       empty.textContent = strings.noScreenshot;
       thumbs.appendChild(empty);
@@ -492,6 +498,58 @@ export function mountFeedbackWidget(
       const spin = el("div", "spinner");
       loading.appendChild(spin);
       thumbs.appendChild(loading);
+    }
+    // Recording: one stacked "deck" tile for the whole frame sequence, living
+    // next to the regular screenshots. Click toggles the numbered ribbon.
+    if (draft.frameUrls.length > 0) {
+      const count = draft.frameUrls.length;
+      const deckLabel = formatString(strings.recordingFrames, String(count));
+      const deck = el("button", "thumb frame-deck");
+      deck.type = "button";
+      deck.classList.toggle("open", framesExpanded);
+      deck.title = deckLabel;
+      const img = el("img");
+      img.src = draft.frameUrls[0];
+      img.alt = deckLabel;
+      const badge = el("span", "deck-count");
+      badge.textContent = deckLabel;
+      deck.append(img, badge);
+      deck.addEventListener("click", () => {
+        framesExpanded = !framesExpanded;
+        renderThumbs();
+      });
+      const remove = el("button", "thumb-remove");
+      remove.type = "button";
+      remove.textContent = "×";
+      remove.title = strings.recordingRemove;
+      remove.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (!draft) {
+          return;
+        }
+        for (const url of draft.frameUrls) {
+          URL.revokeObjectURL(url);
+        }
+        draft.frames = [];
+        draft.frameUrls = [];
+        draft.recording = false;
+        framesExpanded = false;
+        renderThumbs();
+      });
+      deck.appendChild(remove);
+      thumbs.appendChild(deck);
+      if (framesExpanded) {
+        draft.frameUrls.forEach((url, i) => {
+          const frame = el("div", "thumb frame-thumb");
+          const fimg = el("img");
+          fimg.src = url;
+          fimg.alt = `Frame ${i + 1}`;
+          const num = el("span", "frame-num");
+          num.textContent = String(i + 1).padStart(2, "0");
+          frame.append(fimg, num);
+          thumbs.appendChild(frame);
+        });
+      }
     }
     const addBtn = el("button", "add-shot");
     addBtn.type = "button";
@@ -695,6 +753,7 @@ export function mountFeedbackWidget(
       recBarText.textContent = recorder.atLimit
         ? formatString(strings.recordingLimit, `${n}/${recorder.maxFrames}`)
         : formatString(strings.recording, String(n));
+      recSnapBtn.disabled = recorder.atLimit;
     }
   }
 
@@ -712,17 +771,28 @@ export function mountFeedbackWidget(
     }
     const frames = recorder.stop();
     const maskedAny = recorder.maskedAny;
-    // Final screenshot (the "moment of Stop"), masked like the frames.
+    // An open draft (recording added via "+ Add screenshot" or with the panel
+    // up) keeps its shots and comment: frames are appended, not a new issue.
+    if (draft) {
+      addingToDraft = false;
+      draft.frames.push(...frames);
+      draft.frameUrls.push(...frames.map((f) => URL.createObjectURL(f)));
+      draft.recording = draft.frames.length > 0;
+      draft.maskedAny = draft.maskedAny || maskedAny;
+      renderPanel();
+      return;
+    }
+    // Fresh recording: final screenshot (the "moment of Stop"), masked like
+    // the frames, then a new draft.
     const mask = applyMask(privacy);
     let main: Blob | null = null;
     try {
       main = await captureFullPage();
     } catch (error) {
-      console.error("[snaglist] final capture failed:", error);
+      console.error("[sluglist] final capture failed:", error);
     } finally {
       mask.restore();
     }
-    discardDraft();
     consentBox.checked = true;
     draft = {
       mode: "fullpage",
@@ -745,6 +815,22 @@ export function mountFeedbackWidget(
   function cancelRecording(): void {
     recorder.cancel();
     syncRecordingUi();
+    if (addingToDraft && draft) {
+      // Recording was being added to an open draft: return to it unchanged.
+      addingToDraft = false;
+      renderPanel();
+    }
+  }
+
+  function snapFrame(): void {
+    if (!recorder.recording || recorder.atLimit) {
+      return;
+    }
+    recorder
+      .snap()
+      .catch((error) =>
+        console.error("[sluglist] manual frame failed:", error)
+      );
   }
 
   async function trackDelivery(result: CaptureResult): Promise<void> {
@@ -806,8 +892,10 @@ export function mountFeedbackWidget(
     }
     // Consent: when the reporter unchecks "Attach screenshot", the issue is
     // sent with no screenshot (the format already supports screenshot: null).
+    // Recording frames are screenshots too, so consent drops them as well.
     const attachShots = !(consentEnabled && !consentBox.checked);
     const shots = attachShots ? current.shots : [];
+    const frames = attachShots ? current.frames : [];
     // `masked` reflects the shipped screenshots: omitted with no screenshot or
     // when privacy is not configured; else whether anything was redacted.
     const masked =
@@ -827,9 +915,9 @@ export function mountFeedbackWidget(
         mode: current.mode,
         ...(current.category ? { category: current.category } : {}),
         ...(masked !== undefined ? { masked } : {}),
-        // Record mode: attach the frame sequence.
-        ...(current.recording
-          ? { recording: true, frames: current.frames }
+        // Record mode: attach the frame sequence (unless consent dropped it).
+        ...(current.recording && frames.length > 0
+          ? { recording: true, frames }
           : {}),
         // Present for every mode (null when not element) so the artifact fields
         // are always there.
@@ -880,6 +968,17 @@ export function mountFeedbackWidget(
       sendDraft().catch(() => undefined);
       return;
     }
+    // Record mode: S snaps an extra frame manually (outside text fields).
+    if (
+      recorder.recording &&
+      (event.key === "s" || event.key === "S") &&
+      !(event.metaKey || event.ctrlKey || event.altKey) &&
+      !isEditableTarget(event)
+    ) {
+      event.preventDefault();
+      snapFrame();
+      return;
+    }
     if (isMenuOpen() && !isEditableTarget(event)) {
       const index = Number.parseInt(event.key, 10) - 1;
       if (index >= 0 && index < menuItems.length) {
@@ -914,17 +1013,20 @@ export function mountFeedbackWidget(
       openMenu();
     }
   });
-  menuItem(strings.menuElement, "1", startElementMode);
-  menuItem(strings.menuFullpage, "2", startFullpageMode);
-  menuItem(strings.menuArea, "3", startAreaMode);
-  menuItem(strings.menuNoScreenshot, "4", startNoScreenshot);
+  // Ordered by expected frequency of use: quick captures first, the
+  // no-screenshot escape hatch last.
+  menuItem(strings.menuFullpage, startFullpageMode);
+  menuItem(strings.menuArea, startAreaMode);
+  menuItem(strings.menuElement, startElementMode);
   if (recordingEnabled) {
-    menuItem(strings.menuRecord, "5", () => {
+    menuItem(strings.menuRecord, () => {
       startRecording().catch((error) =>
-        console.error("[snaglist] record start failed:", error)
+        console.error("[sluglist] record start failed:", error)
       );
     });
   }
+  menuItem(strings.menuNoScreenshot, startNoScreenshot);
+  recSnapBtn.addEventListener("click", snapFrame);
   recStopBtn.addEventListener("click", () => {
     stopRecording().catch(() => undefined);
   });

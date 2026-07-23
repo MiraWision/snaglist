@@ -3,7 +3,7 @@
   "compilerOptions": {
     "types": ["node"],
     "paths": {
-      "snaglist": ["./src/index.ts"]
+      "sluglist": ["./src/index.ts"]
     }
   },
   "include": ["examples"]

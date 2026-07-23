@@ -1,14 +1,79 @@
 import { CodeBlock } from "./components/CodeBlock";
 import { Demo } from "./components/Demo";
 
-const REPO = "https://github.com/MiraWision/snaglist";
-const NPM = "https://www.npmjs.com/package/snaglist";
+const REPO = "https://github.com/MiraWision/sluglist";
+const NPM = "https://www.npmjs.com/package/sluglist";
+
+// Agent story — commands and output copied from the real `sluglist dev` CLI
+// and the `sluglist-fix` skill's `.done` report shape.
+const DEV_TERMINAL = `$ npx sluglist dev
+sluglist dev listening on http://127.0.0.1:4477
+writing feedback to ./.sluglist
+waiting for reports (Ctrl+C to stop)…
+  ← session-2026-07-23-a1b2/01-save-does-nothing.png   (48 KB)
+  ← session-2026-07-23-a1b2/01-save-does-nothing.md    (612 B)
+  ← session-2026-07-23-a1b2/session.yaml               (1.1 KB)`;
+
+const AGENT_TERMINAL = `$ claude
+› read feedback and fix it
+
+● Reading .sluglist/session-2026-07-23-a1b2 …
+  01 — Save button does nothing · button[aria-label="Save"]
+  frames 02→03: save clicked, no response · PATCH 500 in ## Errors
+● Fixed src/api/animals.ts + AnimalForm.tsx
+● Wrote …/session-2026-07-23-a1b2/.done`;
+
+const DONE_REPORT = `# session-2026-07-23-a1b2 — done
+
+## 01 — Save button does nothing
+- files: src/api/animals.ts, src/forms/AnimalForm.tsx
+- fix: the PATCH sent the record id in the body, but the route
+  reads it from the URL — the handler threw on \`undefined.id\`.
+  Moved the id into the path and guarded the response.
+  Save persists and shows the success toast now.`;
+
+const AGENT_STEPS: { n: string; title: string; body: React.ReactNode }[] = [
+  {
+    n: "1",
+    title: "Run the sidecar",
+    body: (
+      <>
+        Start <Mono>npx sluglist dev</Mono> next to your dev server. It binds{" "}
+        <Mono>127.0.0.1</Mono> and writes reports into a local{" "}
+        <Mono>.sluglist/</Mono> folder — browser JS can&rsquo;t touch disk, so
+        this tiny process does.
+      </>
+    ),
+  },
+  {
+    n: "2",
+    title: "Click feedback",
+    body: (
+      <>
+        Report a bug with the widget while you use the app. The full artifact
+        set — screenshot, comment, CSS selector, page errors and a trail of
+        action frames — lands in the folder.
+      </>
+    ),
+  },
+  {
+    n: "3",
+    title: "Let the agent fix it",
+    body: (
+      <>
+        Tell Claude Code to <em>&ldquo;read feedback and fix it.&rdquo;</em> The
+        bundled skill reads each issue, localizes by selector and frames, fixes
+        the code, and writes a <Mono>.done</Mono> report.
+      </>
+    ),
+  },
+];
 
 const QUICK_START = `import {
   createFeedbackWidget,
   mountFeedbackWidget,
   DownloadConnector,
-} from "snaglist";
+} from "sluglist";
 
 const widget = createFeedbackWidget({
   project: "my-app",
@@ -48,10 +113,12 @@ class MyConnector implements FeedbackConnector {
   }
 }`;
 
-const ARTIFACTS = `my-app/session-2026-07-21-a1b2/
-  session.yaml            # upserted on every issue
-  01-broken-header.md     # frontmatter + comment
-  01-broken-header.png    # optional screenshot(s)
+const ARTIFACTS = `my-app/session-2026-07-23-a1b2/
+  session.yaml                     # upserted on every issue
+  01-save-does-nothing.md          # frontmatter + comment
+  01-save-does-nothing.png         # the screenshot
+  01-save-does-nothing-frames/     # record-mode steps
+    01.png  02.png  03.png
   02-logo-overlap.md
   02-logo-overlap.png`;
 
@@ -62,15 +129,38 @@ selector: 'button[aria-label="Save"]'
 selector_strategy: aria
 selector_unique: true
 mode: element
+category: bug
 element_text: "Save"
 dom_path: "body > main > form > button"
-screen: checkout
+screen: dashboard
 viewport: 1512x982
-screenshot: 01-broken-header.png
-created_at: 2026-07-21T14:05:10Z
+screenshot: 01-save-does-nothing.png
+masked: true
+errors_count: 1
+actions_count: 4
+recording: true
+frames_count: 3
+frames_dir: 01-save-does-nothing-frames
+created_at: 2026-07-23T14:05:10Z
+reporter:
+  user_id: u_18293
+  email: "anna@acme.io"
+  name: Anna K.
 ---
 
-The save button does nothing on the animals form.`;
+The Save button does nothing after I edit an animal — the form
+just sits there, no toast, no error I can see.
+
+## Errors
+- [3s before report] console: PATCH /api/animals/128 500 (Internal Server Error)
+- [2s before report] exception: Uncaught TypeError: Cannot read properties of undefined (reading 'id')
+    at save (/assets/animals-4f2a.js:210:19)
+
+## Actions
+- [22s before report] navigate /dashboard → /dashboard/animals
+- [12s before report] click #edit-128 ("Edit") — frame 02
+- [5s before report] type (11 chars) input#name
+- [1s before report] click button[aria-label="Save"] ("Save") — frame 03`;
 
 const BETA_CODE = `createFeedbackWidget({
   project: "acme",
@@ -152,6 +242,30 @@ function Section({
   );
 }
 
+function Mono({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="rounded bg-[var(--color-canvas)] px-1.5 py-0.5 font-mono text-[0.9em] text-[var(--color-ink)]">
+      {children}
+    </code>
+  );
+}
+
+function Terminal({ title, code }: { title: string; code: string }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-white/10 bg-[#18181b] shadow-sm">
+      <div className="flex items-center gap-2 border-white/10 border-b px-4 py-2.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+        <span className="ml-2 font-mono text-[11px] text-white/40">{title}</span>
+      </div>
+      <pre className="overflow-x-auto px-4 py-3.5 text-[12.5px] leading-relaxed">
+        <code className="font-mono text-[#e4e4e7]">{code}</code>
+      </pre>
+    </div>
+  );
+}
+
 function Logo() {
   return (
     <span className="inline-flex items-center gap-2 font-semibold tracking-tight">
@@ -162,7 +276,7 @@ function Logo() {
         src={`${import.meta.env.BASE_URL}icon.svg`}
         width={28}
       />
-      snaglist
+      sluglist
     </span>
   );
 }
@@ -174,7 +288,10 @@ export function App() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
           <Logo />
           <nav className="flex items-center gap-5 text-[14px] text-[var(--color-muted)]">
-            <a className="hover:text-[var(--color-ink)]" href="#demo">
+            <a className="hover:text-[var(--color-ink)]" href="#agents">
+              Agents
+            </a>
+            <a className="hidden hover:text-[var(--color-ink)] sm:inline" href="#demo">
               Demo
             </a>
             <a className="hidden hover:text-[var(--color-ink)] sm:inline" href="#beta">
@@ -217,7 +334,7 @@ export function App() {
             <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-2.5 font-mono text-[14px]">
               <span>
                 <span className="text-[var(--color-muted)]">$ </span>npm install
-                snaglist
+                sluglist
               </span>
             </div>
             <div className="flex gap-3">
@@ -238,11 +355,62 @@ export function App() {
         </div>
       </div>
 
-      <Section
-        eyebrow="Live"
-        id="demo"
-        title="Try it on this page"
+      {/* Agent story — the differentiator, first section after the hero */}
+      <section
+        className="border-[var(--color-line)] border-y bg-[var(--color-surface)]"
+        id="agents"
       >
+        <div className="mx-auto max-w-5xl px-6 py-16 md:py-24">
+          <p className="mb-2 font-mono text-[12px] text-[var(--color-muted)] uppercase tracking-widest">
+            Works with Claude Code
+          </p>
+          <h2 className="max-w-2xl font-semibold text-2xl tracking-tight md:text-3xl">
+            Feedback that fixes itself
+          </h2>
+          <p className="mt-4 max-w-2xl text-[15px] text-[var(--color-ink-2)] leading-relaxed md:text-[16px]">
+            Skip the dashboard and the ticket queue. Feedback clicked on a page
+            lands in a local folder as clean artifacts, and a coding agent reads
+            it, finds the code, and fixes it — the report goes straight to a
+            diff.
+          </p>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {AGENT_STEPS.map((s) => (
+              <div
+                className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-5"
+                key={s.n}
+              >
+                <div className="mb-3 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] font-mono text-[13px] text-[var(--color-canvas)]">
+                  {s.n}
+                </div>
+                <h3 className="mb-1.5 font-semibold text-[15px]">{s.title}</h3>
+                <p className="text-[14px] text-[var(--color-ink-2)] leading-relaxed">
+                  {s.body}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-5 md:grid-cols-2 md:items-start">
+            <Terminal code={DEV_TERMINAL} title="your project" />
+            <Terminal code={AGENT_TERMINAL} title="claude code" />
+          </div>
+
+          <div className="mt-5">
+            <p className="mb-2 font-mono text-[11px] text-[var(--color-muted)] uppercase tracking-wider">
+              …/.done — the agent&rsquo;s report
+            </p>
+            <CodeBlock code={DONE_REPORT} lang="markdown" />
+          </div>
+
+          <p className="mt-6 text-[13px] text-[var(--color-muted)] leading-relaxed">
+            Works with any agent that can read files. Claude Code is supported
+            out of the box via the bundled <Mono>sluglist-fix</Mono> skill.
+          </p>
+        </div>
+      </section>
+
+      <Section eyebrow="Live" id="demo" title="Try it on this page">
         <Demo />
       </Section>
 
@@ -322,7 +490,7 @@ export function App() {
           <div>
             <p className="mb-4 text-[15px] text-[var(--color-ink-2)] leading-relaxed">
               The <code className="font-mono text-[13px]">beta</code> preset turns
-              snaglist into a feedback button for people on a production MVP: it
+              sluglist into a feedback button for people on a production MVP: it
               masks form inputs and anything marked{" "}
               <code className="font-mono text-[13px]">data-private</code> in the
               screenshot, adds a screenshot-consent checkbox, and attaches the

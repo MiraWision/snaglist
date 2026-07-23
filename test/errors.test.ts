@@ -89,7 +89,7 @@ describe("createErrorCapture", () => {
   it("ignores the widget's own log lines", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const cap = createErrorCapture();
-    console.error("[snaglist] delivery failed: 500");
+    console.error("[sluglist] delivery failed: 500");
     expect(cap.snapshot()).toHaveLength(0);
     cap.uninstall();
   });

@@ -14,18 +14,18 @@ export default defineConfig([
     target: "es2022",
   },
   // Standalone browser bundle for a no-build <script> drop-in (unpkg / jsDelivr).
-  // Dependencies are inlined and exposed on a global `Snaglist`.
+  // Dependencies are inlined and exposed on a global `Sluglist`.
   {
-    entry: { snaglist: "src/index.ts" },
+    entry: { sluglist: "src/index.ts" },
     format: ["iife"],
-    globalName: "Snaglist",
+    globalName: "Sluglist",
     platform: "browser",
     minify: true,
     sourcemap: true,
     noExternal: ["html-to-image", "jszip"],
     target: "es2020",
   },
-  // Node-only CLI (`snaglist dev`). Separate entry so its node:fs/node:http
+  // Node-only CLI (`sluglist dev`). Separate entry so its node:fs/node:http
   // imports never reach the browser bundle. Emitted as an executable ESM file.
   {
     entry: { cli: "src/cli/index.ts" },

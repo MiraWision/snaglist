@@ -29,13 +29,13 @@
       <button class="cta" type="button">Get started</button>
     </main>
 
-    <script src="../../dist/snaglist.global.js"></script>
+    <script src="../../dist/sluglist.global.js"></script>
     <script>
-      const core = Snaglist.createFeedbackWidget({
+      const core = Sluglist.createFeedbackWidget({
         project: "acme",
-        connectors: [new Snaglist.LocalConnector()], // 127.0.0.1:4477
+        connectors: [new Sluglist.LocalConnector()], // 127.0.0.1:4477
       });
-      Snaglist.mountFeedbackWidget(core);
+      Sluglist.mountFeedbackWidget(core);
       window.__core = core;
 
       window.fileFeedback = async () => {
@@ -47,8 +47,8 @@
         const reports = [];
         for (const s of specs) {
           const el = document.querySelector(s.sel);
-          const meta = Snaglist.collectElementMetadata(el);
-          const shot = await Snaglist.captureElement(el);
+          const meta = Sluglist.collectElementMetadata(el);
+          const shot = await Sluglist.captureElement(el);
           const r = await core.captureIssue({
             comment: s.comment,
             mode: "element",

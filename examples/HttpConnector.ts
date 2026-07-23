@@ -1,11 +1,11 @@
-import type { ArtifactFile, FeedbackConnector } from "snaglist";
+import type { ArtifactFile, FeedbackConnector } from "sluglist";
 
 /**
  * Example client connector for beta / production: POST each artifact as JSON to
  * your own endpoint. The browser never holds storage credentials — the endpoint
  * (see `feedback-route.ts`) owns them and does the write.
  *
- * This is example code, not part of snaglist core. Copy and adapt it.
+ * This is example code, not part of sluglist core. Copy and adapt it.
  */
 export class HttpConnector implements FeedbackConnector {
   readonly id = "http";
@@ -37,7 +37,7 @@ export class HttpConnector implements FeedbackConnector {
       }),
     });
     if (!res.ok) {
-      throw new Error(`[snaglist] delivery failed: ${res.status} for ${file.path}`);
+      throw new Error(`[sluglist] delivery failed: ${res.status} for ${file.path}`);
     }
   }
 }

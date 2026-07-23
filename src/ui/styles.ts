@@ -272,6 +272,63 @@ export function widgetStyles(theme: UiTheme): string {
   padding: 2px 4px;
   border-radius: 4px;
 }
+/* Recording deck: one tile for the whole frame sequence, drawn as a small
+   stack (two tilted cards behind the front frame). Click expands the ribbon. */
+.frame-deck {
+  overflow: visible;
+  background: none;
+  border: none;
+  margin: 0 3px;
+  cursor: pointer;
+}
+.frame-deck::before,
+.frame-deck::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+}
+.frame-deck::before {
+  transform: rotate(-4deg) translate(-3px, 1px);
+}
+.frame-deck::after {
+  transform: rotate(3deg) translate(3px, -1px);
+}
+.frame-deck img {
+  position: relative;
+  z-index: 1;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+.frame-deck:hover img,
+.frame-deck.open img {
+  border-color: #9ca3af;
+}
+.deck-count {
+  position: absolute;
+  z-index: 2;
+  bottom: 2px;
+  left: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(17, 17, 17, 0.72);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.deck-count::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #dc2626;
+}
 .rec-dot {
   position: absolute;
   top: -4px;
@@ -311,7 +368,17 @@ export function widgetStyles(theme: UiTheme): string {
   background: #dc2626;
   animation: fbw-pulse 1.2s ease-in-out infinite;
 }
+.rec-bar-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .rec-bar-text {
+  white-space: nowrap;
+}
+.rec-bar-hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
 }
 .rec-bar button {
@@ -329,6 +396,26 @@ export function widgetStyles(theme: UiTheme): string {
 .rec-cancel {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
+}
+.rec-snap {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rec-snap kbd {
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+.rec-snap:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .chips {
   display: flex;
@@ -505,6 +592,7 @@ export function widgetStyles(theme: UiTheme): string {
 }
 .thumb .thumb-remove {
   position: absolute;
+  z-index: 2;
   top: 1px;
   right: 1px;
   width: 16px;

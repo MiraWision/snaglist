@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>snaglist — beta preset E2E</title>
+    <title>sluglist — beta preset E2E</title>
     <style>
       body { font-family: -apple-system, system-ui, sans-serif; margin: 24px; color: #111; }
       #target { max-width: 420px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }
@@ -22,17 +22,17 @@
       <div class="note" data-private>Internal note: VIP, churn risk</div>
     </div>
 
-    <script src="../dist/snaglist.global.js"></script>
+    <script src="../dist/sluglist.global.js"></script>
     <script>
-      const memory = new Snaglist.MemoryConnector();
-      const core = Snaglist.createFeedbackWidget({
+      const memory = new Sluglist.MemoryConnector();
+      const core = Sluglist.createFeedbackWidget({
         project: "acme",
         preset: "beta",
         connectors: [memory],
         identity: { userId: "u_18293", email: "anna.karlsson@example.com", name: "Anna K." },
         custom: { plan: "pro", appVersion: "2.4.1" },
       });
-      const ui = Snaglist.mountFeedbackWidget(core);
+      const ui = Sluglist.mountFeedbackWidget(core);
       const shadow = document.querySelector("[data-feedback-widget]").shadowRoot;
       window.__core = core;
       window.__memory = memory;

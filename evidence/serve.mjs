@@ -56,4 +56,4 @@ http
       res.end("not found");
     }
   })
-  .listen(5175, () => console.log("snaglist evidence server on http://localhost:5175"));
+  .listen(5175, () => console.log("sluglist evidence server on http://localhost:5175"));

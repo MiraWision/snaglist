@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>snaglist — record mode harness</title>
+    <title>sluglist — record mode harness</title>
     <style>
       body { font-family: -apple-system, system-ui, sans-serif; margin: 24px; color: #18181b; }
       nav a { margin-right: 12px; }
@@ -24,7 +24,7 @@
       <p class="price" id="total">Total: $100</p>
     </div>
 
-    <script src="../dist/snaglist.global.js"></script>
+    <script src="../dist/sluglist.global.js"></script>
     <script>
       const params = new URLSearchParams(location.search);
       const maxFrames = Number(params.get("max") || 30);
@@ -40,12 +40,12 @@
       document.getElementById("to-checkout").addEventListener("click", (e) => { e.preventDefault(); go("/checkout"); });
       document.getElementById("apply").addEventListener("click", () => { discount = 20; render(); });
 
-      const core = Snaglist.createFeedbackWidget({
+      const core = Sluglist.createFeedbackWidget({
         project: "acme",
-        connectors: [new Snaglist.LocalConnector()],
+        connectors: [new Sluglist.LocalConnector()],
         recording: { maxFrames, frameMinInterval: 0 }, // frame each spaced action for the test
       });
-      Snaglist.mountFeedbackWidget(core);
+      Sluglist.mountFeedbackWidget(core);
       const shadow = document.querySelector("[data-feedback-widget]").shadowRoot;
       window.__shadow = shadow;
       window.__core = core;

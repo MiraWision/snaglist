@@ -1,15 +1,15 @@
 {
-  "name": "snaglist",
-  "version": "1.5.0",
+  "name": "sluglist",
+  "version": "1.6.0",
   "description": "Universal embeddable feedback widget: capture visual feedback (element, area, full page) on dev, staging and beta sites, annotate it, mask PII, and deliver artifacts through pluggable connectors.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "unpkg": "./dist/snaglist.global.js",
-  "jsdelivr": "./dist/snaglist.global.js",
+  "unpkg": "./dist/sluglist.global.js",
+  "jsdelivr": "./dist/sluglist.global.js",
   "bin": {
-    "snaglist": "./dist/cli.js"
+    "sluglist": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -32,29 +32,28 @@
     "publish": "npm publish --access public"
   },
   "keywords": [
+    "sluglist",
     "feedback",
-    "widget",
+    "slug",
     "bug report",
-    "beta feedback",
-    "snagging",
+    "visual feedback",
     "screenshot",
     "annotation",
+    "widget",
     "html-to-image",
-    "visual feedback",
     "qa",
     "staging",
-    "typescript",
-    "snaglist"
+    "typescript"
   ],
   "author": "Yelysei Lukin <yelysei277@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MiraWision/snaglist.git"
+    "url": "https://github.com/MiraWision/sluglist.git"
   },
   "bugs": {
-    "url": "https://github.com/MiraWision/snaglist/issues"
+    "url": "https://github.com/MiraWision/sluglist/issues"
   },
-  "homepage": "https://mirawision.github.io/snaglist",
+  "homepage": "https://mirawision.github.io/sluglist",
   "license": "MIT",
   "dependencies": {
     "html-to-image": "^1.11.13",

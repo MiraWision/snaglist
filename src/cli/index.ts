@@ -1,9 +1,10 @@
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { createDevServer } from "./server";
 
 /**
- * `snaglist dev` — a local sidecar that receives feedback artifacts from the
- * LocalConnector and writes them into `.snaglist/`. Run it alongside your dev
+ * `sluglist dev` — a local sidecar that receives feedback artifacts from the
+ * LocalConnector and writes them into `.sluglist/`. Run it alongside your dev
  * server; a Claude Code skill then reads the folder and fixes the issues.
  */
 
@@ -17,7 +18,7 @@ interface Args {
 function parseArgs(argv: string[]): Args {
   const args: Args = {
     command: "",
-    dir: ".snaglist",
+    dir: ".sluglist",
     port: 4477,
     help: false,
   };
@@ -37,14 +38,14 @@ function parseArgs(argv: string[]): Args {
   return args;
 }
 
-const USAGE = `snaglist dev — local feedback sidecar
+const USAGE = `sluglist dev — local feedback sidecar
 
 Usage:
-  npx snaglist dev [--port <n>] [--dir <path>]
+  npx sluglist dev [--port <n>] [--dir <path>]
 
 Options:
   -p, --port <n>     Port to listen on (127.0.0.1 only). Default 4477.
-  -d, --dir <path>   Folder to write artifacts into. Default .snaglist
+  -d, --dir <path>   Folder to write artifacts into. Default .sluglist
   -h, --help         Show this help.
 
 Pair with a LocalConnector in your app:
@@ -62,6 +63,17 @@ function main(): void {
   if (!Number.isInteger(args.port) || args.port <= 0 || args.port > 65_535) {
     process.stderr.write(`Invalid --port: ${args.port}\n`);
     process.exit(1);
+  }
+
+  // Folder-rename compatibility: the default folder is now `.sluglist/`. If a
+  // project still has the old `.snaglist/` from before the rename (and no new
+  // folder yet), point it out once — but never rename it automatically.
+  if (existsSync(".snaglist") && !existsSync(".sluglist")) {
+    process.stderr.write(
+      "note: found a legacy `.snaglist/` folder. sluglist now writes to " +
+        "`.sluglist/`. Rename it (`mv .snaglist .sluglist`) to keep past " +
+        "sessions together, or pass `--dir .snaglist` to keep using it.\n"
+    );
   }
 
   const absDir = resolve(args.dir);
@@ -87,7 +99,7 @@ function main(): void {
 
   server.listen(args.port, host, () => {
     process.stdout.write(
-      `snaglist dev listening on http://${host}:${args.port}\n` +
+      `sluglist dev listening on http://${host}:${args.port}\n` +
         `writing feedback to ${absDir}\n` +
         "waiting for reports (Ctrl+C to stop)…\n"
     );

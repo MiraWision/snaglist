@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>snaglist — shortcut harness</title>
+    <title>sluglist — shortcut harness</title>
     <style>
       body { font-family: -apple-system, system-ui, sans-serif; margin: 24px; }
       input { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; width: 320px; }
@@ -17,14 +17,14 @@
     </label>
     <pre id="log">last keydown: —</pre>
 
-    <script src="../dist/snaglist.global.js"></script>
+    <script src="../dist/sluglist.global.js"></script>
     <script>
-      const core = Snaglist.createFeedbackWidget({
+      const core = Sluglist.createFeedbackWidget({
         project: "acme",
-        connectors: [new Snaglist.MemoryConnector()],
+        connectors: [new Sluglist.MemoryConnector()],
         // default shortcut: Shift+Alt+F
       });
-      Snaglist.mountFeedbackWidget(core);
+      Sluglist.mountFeedbackWidget(core);
       const shadow = document.querySelector("[data-feedback-widget]").shadowRoot;
       window.__menuOpen = () => shadow.querySelector(".menu").style.display === "flex";
 

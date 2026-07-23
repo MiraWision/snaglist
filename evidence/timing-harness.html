@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>snaglist — frame timing</title>
+    <title>sluglist — frame timing</title>
     <style>
       body { font-family: -apple-system, system-ui, sans-serif; margin: 0; color: #18181b; }
       header { display: flex; gap: 16px; padding: 16px 24px; border-bottom: 1px solid #e5e7eb; align-items: center; }
@@ -33,7 +33,7 @@
       </form>
       <div class="grid" id="grid"></div>
     </main>
-    <script src="../dist/snaglist.global.js"></script>
+    <script src="../dist/sluglist.global.js"></script>
     <script>
       // ~60 cards → a realistically busy page
       const grid = document.getElementById("grid");
@@ -43,14 +43,14 @@
         c.innerHTML = `<h3>Animal ${i + 1}</h3><p>Morph: albino · Weight: ${100 + i}g · Sex: female</p>`;
         grid.appendChild(c);
       }
-      const core = Snaglist.createFeedbackWidget({ project: "acme", connectors: [new Snaglist.MemoryConnector()] });
-      Snaglist.mountFeedbackWidget(core);
+      const core = Sluglist.createFeedbackWidget({ project: "acme", connectors: [new Sluglist.MemoryConnector()] });
+      Sluglist.mountFeedbackWidget(core);
 
       window.measure = async (n = 6) => {
         const times = [];
         for (let i = 0; i < n; i++) {
           const t0 = performance.now();
-          await Snaglist.captureFullPage();
+          await Sluglist.captureFullPage();
           times.push(Math.round(performance.now() - t0));
         }
         times.sort((a, b) => a - b);

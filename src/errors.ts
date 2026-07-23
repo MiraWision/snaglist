@@ -74,7 +74,7 @@ function safeString(value: unknown): string {
 /** Skip the widget's own log lines so connector noise never pollutes issues. */
 function isSelfLog(message: string): boolean {
   return (
-    message.startsWith("[snaglist]") || message.startsWith("[feedback-widget]")
+    message.startsWith("[sluglist]") || message.startsWith("[feedback-widget]")
   );
 }
 

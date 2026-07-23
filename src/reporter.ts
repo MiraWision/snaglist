@@ -68,26 +68,26 @@ export function normalizeCustom(
     const type = typeof value;
     if (!(type === "string" || type === "number" || type === "boolean")) {
       console.warn(
-        `[snaglist] custom: dropping "${rawKey}" — only string, number or boolean allowed (got ${type})`
+        `[sluglist] custom: dropping "${rawKey}" — only string, number or boolean allowed (got ${type})`
       );
       continue;
     }
     if (typeof value === "number" && !Number.isFinite(value)) {
       console.warn(
-        `[snaglist] custom: dropping "${rawKey}" — non-finite number`
+        `[sluglist] custom: dropping "${rawKey}" — non-finite number`
       );
       continue;
     }
     const key = toSnakeCase(rawKey);
     if (!key) {
       console.warn(
-        `[snaglist] custom: dropping "${rawKey}" — empty key after normalization`
+        `[sluglist] custom: dropping "${rawKey}" — empty key after normalization`
       );
       continue;
     }
     if (count >= MAX_CUSTOM_KEYS) {
       console.warn(
-        `[snaglist] custom: dropping "${rawKey}" — over the ${MAX_CUSTOM_KEYS}-key limit`
+        `[sluglist] custom: dropping "${rawKey}" — over the ${MAX_CUSTOM_KEYS}-key limit`
       );
       continue;
     }

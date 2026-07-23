@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>snaglist — action trail harness</title>
+    <title>sluglist — action trail harness</title>
     <style>
       body { font-family: -apple-system, system-ui, sans-serif; margin: 24px; }
       nav a { margin-right: 12px; }
@@ -23,7 +23,7 @@
       <button type="submit">Save</button>
     </form>
 
-    <script src="../dist/snaglist.global.js"></script>
+    <script src="../dist/sluglist.global.js"></script>
     <script>
       // tiny SPA: links call pushState (no full nav)
       function go(path) { history.pushState({}, "", path); document.getElementById("route").textContent = path; }
@@ -31,8 +31,8 @@
       document.getElementById("to-detail").addEventListener("click", (e) => { e.preventDefault(); go("/animals/128?token=abc123secret"); });
       document.getElementById("animal-form").addEventListener("submit", (e) => e.preventDefault());
 
-      const core = Snaglist.createFeedbackWidget({ project: "acme", connectors: [new Snaglist.MemoryConnector()] });
-      Snaglist.mountFeedbackWidget(core);
+      const core = Sluglist.createFeedbackWidget({ project: "acme", connectors: [new Sluglist.MemoryConnector()] });
+      Sluglist.mountFeedbackWidget(core);
       window.__core = core;
 
       // Simulate a real user scenario, then capture a comment-only issue.
@@ -50,7 +50,7 @@
         document.getElementById("animal-form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         const res = await core.captureIssue({ comment: "Report after this sequence", mode: "fullpage" });
         await res.delivered;
-        const md = new Snaglist.MemoryConnector(); // not used; get from core connector below
+        const md = new Sluglist.MemoryConnector(); // not used; get from core connector below
         return { routeAfter: document.getElementById("route").textContent, sessionId: res.sessionId };
       };
       // expose the memory connector to read the artifact

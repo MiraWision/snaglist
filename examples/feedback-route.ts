@@ -3,11 +3,11 @@
  * `app/api/feedback/route.ts`. Pair it with `HttpConnector` on the client.
  *
  * The endpoint owns storage credentials and does the write; the browser only
- * talks to this route. This is example code, not part of snaglist core.
+ * talks to this route. This is example code, not part of sluglist core.
  *
  * ⚠️  Never put storage write-keys in the browser or a client connector. Keep
  *     them server-side, behind an endpoint like this. Rate limiting and auth are
- *     the endpoint's responsibility — snaglist core does neither by design.
+ *     the endpoint's responsibility — sluglist core does neither by design.
  */
 
 // --- Naive in-memory sliding-window rate limit. -------------------------------

@@ -25,7 +25,11 @@ export interface FeedbackWidgetStrings {
   noScreenshot: string;
   recording: string;
   recordingCancel: string;
+  recordingFrames: string;
+  recordingHint: string;
   recordingLimit: string;
+  recordingRemove: string;
+  recordingSnap: string;
   recordingStop: string;
   reportProblem: string;
   retry: string;
@@ -60,7 +64,11 @@ export const DEFAULT_STRINGS: FeedbackWidgetStrings = {
   noScreenshot: "No screenshot for this issue",
   recording: "Recording · {id} frames",
   recordingCancel: "Cancel",
+  recordingFrames: "{id} frames",
+  recordingHint: "Frames auto-capture on clicks & navigation",
   recordingLimit: "Frame limit reached ({id})",
+  recordingRemove: "Remove recording",
+  recordingSnap: "+ Frame",
   recordingStop: "Stop & describe",
   reportProblem: "Report a problem",
   retry: "Retry",

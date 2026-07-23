@@ -48,7 +48,7 @@ function collectTargets(privacy: FeedbackPrivacy): Set<HTMLElement> {
     try {
       add(document.querySelectorAll(selector));
     } catch {
-      console.warn(`[snaglist] privacy: invalid maskSelector "${selector}"`);
+      console.warn(`[sluglist] privacy: invalid maskSelector "${selector}"`);
     }
   }
   return targets;

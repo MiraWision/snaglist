@@ -113,6 +113,38 @@ describe("createRecorder", () => {
     expect(recorder.frameCount).toBe(2);
   });
 
+  it("snap() captures a manual frame, bypassing the throttle", async () => {
+    const actions = fakeActions();
+    let t = 0;
+    const recorder = createRecorder({
+      actions,
+      maxFrames: 30,
+      frameMinInterval: 1000,
+      privacy: {},
+      now: () => t,
+    });
+    await recorder.start(); // frame 1 at t=0
+    t = 100; // within the throttle window: an action would be skipped
+    await recorder.snap();
+    expect(recorder.frameCount).toBe(2);
+  });
+
+  it("snap() is a no-op when not recording or at the frame cap", async () => {
+    const actions = fakeActions();
+    const recorder = createRecorder({
+      actions,
+      maxFrames: 1,
+      frameMinInterval: 0,
+      privacy: {},
+      now: () => 0,
+    });
+    await recorder.snap(); // not recording
+    expect(recorder.frameCount).toBe(0);
+    await recorder.start(); // frame 1 = the cap
+    await recorder.snap();
+    expect(recorder.frameCount).toBe(1);
+  });
+
   it("stop returns the frames; cancel discards them", async () => {
     const actions = fakeActions();
     const recorder = createRecorder({

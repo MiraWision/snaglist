@@ -1,8 +1,10 @@
-# snaglist
+# sluglist
 
 > Universal embeddable feedback widget for dev, staging and beta sites.
 
-**[Live demo & docs → mirawision.github.io/snaglist](https://mirawision.github.io/snaglist)**
+**[Live demo & docs → mirawision.github.io/sluglist](https://mirawision.github.io/sluglist)**
+
+> **Name:** briefly published as `snaglist`; the permanent name is `sluglist`.
 
 A framework-agnostic, dependency-light widget that lets people leave visual feedback directly on
 a running web app: pick an element, grab an area or the full page, annotate the screenshot, add a
@@ -13,15 +15,15 @@ encapsulated in the connector you provide.
 ## Install
 
 ```bash
-npm install snaglist
+npm install sluglist
 ```
 
-Or drop it into any page without a build step (deps inlined, exposed as `Snaglist`):
+Or drop it into any page without a build step (deps inlined, exposed as `Sluglist`):
 
 ```html
-<script src="https://unpkg.com/snaglist"></script>
+<script src="https://unpkg.com/sluglist"></script>
 <script>
-  const { createFeedbackWidget, mountFeedbackWidget, DownloadConnector } = Snaglist;
+  const { createFeedbackWidget, mountFeedbackWidget, DownloadConnector } = Sluglist;
   const widget = createFeedbackWidget({
     project: "my-app",
     connectors: [new DownloadConnector()],
@@ -37,7 +39,7 @@ import {
   createFeedbackWidget,
   mountFeedbackWidget,
   DownloadConnector,
-} from "snaglist";
+} from "sluglist";
 
 const widget = createFeedbackWidget({
   project: "my-app",              // slug written into session.yaml
@@ -67,10 +69,13 @@ upload or a closed tab does not lose feedback. Disable with `offlineQueue: false
 
 ## Capture modes
 
-- **element** — hover to highlight, click to capture a single element (records its CSS selector)
 - **fullpage** — the whole scrollable document
 - **area** — drag a rectangle and crop to it
+- **element** — hover to highlight, click to capture a single element (records its CSS selector)
 - **comment only** — no screenshot
+
+The menu lists them in that order (plus **Record steps**), most-used first, with `1`–`5` hotkeys
+following the position.
 
 Each screenshot can be annotated before sending (arrow, box, text; color; undo), with keyboard
 shortcuts (A / B / T, Ctrl/Cmd+Z, Esc, click backdrop to close), and an issue can carry multiple
@@ -183,12 +188,12 @@ class SupabaseConnector implements FeedbackConnector {
 
 ## Beta feedback mode
 
-Beyond dev/staging, snaglist can power a **"Report a problem"** button for real users on a
+Beyond dev/staging, sluglist can power a **"Report a problem"** button for real users on a
 production MVP or beta. It stays **one-way capture** (see the scope note below); the extra pieces are
 reporter identity, per-issue custom fields, and PII masking so screenshots are safe to store.
 
 ```ts
-import { createFeedbackWidget, mountFeedbackWidget } from "snaglist";
+import { createFeedbackWidget, mountFeedbackWidget } from "sluglist";
 import { HttpConnector } from "./HttpConnector"; // see examples/
 
 const widget = createFeedbackWidget({
@@ -222,23 +227,23 @@ your side that owns the credentials and does the write (and rate-limiting). See
 
 ### Scope — one-way capture by design
 
-snaglist captures feedback and hands it to your storage. It is **not** a support tool:
+sluglist captures feedback and hands it to your storage. It is **not** a support tool:
 
 - **No inbox, no statuses, no threads, no replies to the user, no email notifications.**
 - **No user accounts** and no login of its own.
 
 If you need a support loop (triage, back-and-forth, resolution states), that is a different product;
-snaglist deliberately stops at capture. Its output is a stable set of artifacts you can pipe into
+sluglist deliberately stops at capture. Its output is a stable set of artifacts you can pipe into
 whatever tracker or workflow you already run.
 
 ## Local feedback loop
 
-Test your app locally, click feedback with the widget, and have it land in a `.snaglist/` folder in
+Test your app locally, click feedback with the widget, and have it land in a `.sluglist/` folder in
 your project — then let an agent (e.g. Claude Code) read it and fix the issues. Browser JS can't write
-to disk, so a tiny sidecar process, `snaglist dev`, sits between the widget and the folder.
+to disk, so a tiny sidecar process, `sluglist dev`, sits between the widget and the folder.
 
 ```ts
-import { createFeedbackWidget, mountFeedbackWidget, LocalConnector } from "snaglist";
+import { createFeedbackWidget, mountFeedbackWidget, LocalConnector } from "sluglist";
 
 const widget = createFeedbackWidget({
   project: "my-app",
@@ -251,29 +256,29 @@ mountFeedbackWidget(widget);
 Run the sidecar next to your dev server:
 
 ```bash
-npx snaglist dev                        # writes to ./.snaglist, port 4477
-npx snaglist dev --dir .feedback --port 5511
+npx sluglist dev                        # writes to ./.sluglist, port 4477
+npx sluglist dev --dir .feedback --port 5511
 ```
 
-Click feedback → the full artifact set appears under `.snaglist/session-*/`. The dev server binds to
+Click feedback → the full artifact set appears under `.sluglist/session-*/`. The dev server binds to
 `127.0.0.1` only and has **no authentication** — it is local-only by design; don't expose it or forward
 its port. If it isn't running, `LocalConnector` warns once and your other connectors keep working (the
 UI is never blocked).
 
-> Add `.snaglist/` to your project's `.gitignore`.
+> Add `.sluglist/` to your project's `.gitignore`.
 
 ### Let an agent fix it (Claude Code skill)
 
-The package ships a `snaglist-fix` skill that reads `.snaglist/` and fixes the reported issues. Install
+The package ships a `sluglist-fix` skill that reads `.sluglist/` and fixes the reported issues. Install
 it into your project once:
 
 ```bash
-mkdir -p .claude/skills && cp -r node_modules/snaglist/skills/snaglist-fix .claude/skills/
+mkdir -p .claude/skills && cp -r node_modules/sluglist/skills/sluglist-fix .claude/skills/
 ```
 
 Then, after clicking feedback, ask Claude Code to "fix feedback": it reads each issue (comment,
 selector, `element_text`, screenshot, `## Errors`), localizes and fixes the code, and writes a
-`.done` report into the session folder. See [`skills/snaglist-fix/SKILL.md`](skills/snaglist-fix/SKILL.md).
+`.done` report into the session folder. See [`skills/sluglist-fix/SKILL.md`](skills/sluglist-fix/SKILL.md).
 
 ## Programmatic capture
 
@@ -319,7 +324,7 @@ Reporter **identity** and **custom** fields are collected only when you explicit
 
 ## Error capture
 
-From the moment the widget initializes, snaglist keeps a small ring buffer of recent page errors from
+From the moment the widget initializes, sluglist keeps a small ring buffer of recent page errors from
 three sources — `console.error`, uncaught `error` events, and `unhandledrejection` — and attaches a
 snapshot to each issue as a `## Errors` section (with a relative timestamp per entry) plus an
 `errors_count` field in the frontmatter. The original `console.error` still runs, so nothing is
@@ -339,11 +344,11 @@ createFeedbackWidget({
 
 > **Note:** error messages and stack traces can contain user data — in beta mode they may include PII.
 > Production stack traces are usually minified. Treat captured errors as diagnostic hints, not ground
-> truth; snaglist stores them verbatim and does not resolve source maps.
+> truth; sluglist stores them verbatim and does not resolve source maps.
 
 ## Action trail & record mode
 
-Some bugs need a sequence, not a single screenshot. snaglist has two layers for that.
+Some bugs need a sequence, not a single screenshot. sluglist has two layers for that.
 
 **Action trail** (always on) keeps a small ring buffer of recent actions — clicks, SPA navigations,
 submits, typing — and attaches them to every issue as a `## Actions` section (plus `actions_count`):
@@ -363,7 +368,14 @@ default; navigation paths drop the query string.
 **Record mode** turns a sequence into steps-to-reproduce *with images*. Click **Record steps**, do the
 thing, then **Stop & describe**. A frame is captured at the start and on each click / navigation /
 submit (not typing), so the issue gets a `NN-slug-frames/` folder of numbered screenshots and the
-matching `## Actions` lines are tagged `— frame NN`. Frames respect PII masking.
+matching `## Actions` lines are tagged `— frame NN`. Frames respect PII masking. Need a state the
+auto-capture misses (a hover popover, a transient toast)? Hit **`+ Frame`** in the recording bar — or
+press **S** — to snap one manually.
+
+Recordings and screenshots mix in one issue: start a recording from an open draft (via
+`+ Add screenshot` → `Record steps`) and the frames attach to it instead of replacing it. In the
+panel the recording shows as a single stacked tile next to the screenshots; click it to expand the
+numbered frame ribbon, `×` to drop it.
 
 ```ts
 createFeedbackWidget({

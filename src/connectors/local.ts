@@ -1,8 +1,8 @@
 import type { ArtifactFile, FeedbackConnector } from "../types";
 
 /**
- * Delivers artifacts to a local `snaglist dev` sidecar (see the CLI), which
- * writes them into the project's `.snaglist/` folder. Browser JS cannot write
+ * Delivers artifacts to a local `sluglist dev` sidecar (see the CLI), which
+ * writes them into the project's `.sluglist/` folder. Browser JS cannot write
  * to disk, so this posts to `http://127.0.0.1:{port}/put`.
  *
  * If the dev server is not running, it warns once per session and rethrows so
@@ -48,12 +48,12 @@ export class LocalConnector implements FeedbackConnector {
       // Connection refused / server down: warn once, then rethrow.
       this.warnOnce();
       throw new Error(
-        `[snaglist] local delivery failed (is \`npx snaglist dev\` running?): ${String(error)}`
+        `[sluglist] local delivery failed (is \`npx sluglist dev\` running?): ${String(error)}`
       );
     }
     if (!response.ok) {
       throw new Error(
-        `[snaglist] local delivery failed: ${response.status} for ${file.path}`
+        `[sluglist] local delivery failed: ${response.status} for ${file.path}`
       );
     }
   }
@@ -64,7 +64,7 @@ export class LocalConnector implements FeedbackConnector {
     }
     this.warned = true;
     console.warn(
-      `[snaglist] dev server not reachable at ${this.endpoint} — run \`npx snaglist dev\` to save feedback into .snaglist/. Feedback for this session will not be stored locally.`
+      `[sluglist] dev server not reachable at ${this.endpoint} — run \`npx sluglist dev\` to save feedback into .sluglist/. Feedback for this session will not be stored locally.`
     );
   }
 }

@@ -29,13 +29,13 @@ describe("resolveTarget", () => {
   });
 });
 
-describe("snaglist dev server", () => {
+describe("sluglist dev server", () => {
   let server: Server;
   let dir: string;
   let base: string;
 
   beforeAll(async () => {
-    dir = await mkdtemp(join(tmpdir(), "snaglist-"));
+    dir = await mkdtemp(join(tmpdir(), "sluglist-"));
     server = createDevServer({ dir });
     await new Promise<void>((res) => server.listen(0, "127.0.0.1", res));
     const addr = server.address();
@@ -53,7 +53,7 @@ describe("snaglist dev server", () => {
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.ok).toBe(true);
-    expect(body.dir).toContain("snaglist-");
+    expect(body.dir).toContain("sluglist-");
   });
 
   it("POST /put writes the file with the decoded bytes", async () => {

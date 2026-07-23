@@ -1,22 +1,24 @@
 ---
-name: snaglist-fix
-description: Read local snaglist feedback from a project's .snaglist/ folder and fix the reported issues. Use when the user says "read feedback", "fix feedback", or "snaglist", or when a .snaglist/ folder is present in the project.
+name: sluglist-fix
+description: Read local sluglist feedback from a project's .sluglist/ folder and fix the reported issues. Use when the user says "read feedback", "fix feedback", or "sluglist", or when a .sluglist/ folder is present in the project.
 ---
 
-# snaglist-fix
+# sluglist-fix
 
-Close the local feedback loop: someone clicked feedback with the snaglist widget while testing the app
-locally, `snaglist dev` wrote it into `.snaglist/`, and now you read those issues and fix them.
+Close the local feedback loop: someone clicked feedback with the sluglist widget while testing the app
+locally, `sluglist dev` wrote it into `.sluglist/`, and now you read those issues and fix them.
 
 ## When to use
 
-- The user says "read feedback", "fix feedback", "snaglist", "check the snag list".
-- A `.snaglist/` directory exists at the project root (or wherever `snaglist dev --dir` wrote it).
+- The user says "read feedback", "fix feedback", or "sluglist".
+- A `.sluglist/` directory exists at the project root (or wherever `sluglist dev --dir` wrote it).
+- A legacy `.snaglist/` directory exists (the folder name before the rename) and there is no
+  `.sluglist/` — treat it as the feedback folder and note "legacy folder name" in your report.
 
-## What's in `.snaglist/`
+## What's in `.sluglist/`
 
 ```
-.snaglist/
+.sluglist/
   session-YYYY-MM-DD-xxxx/
     session.yaml          # index of issues in this session (order, files, url, selector, screen)
     01-<slug>.md          # one issue: YAML frontmatter + the reporter's comment (+ ## Errors)
@@ -53,8 +55,10 @@ shows the state *after* action `NN`.
 
 ## Algorithm
 
-1. **Find work.** List `.snaglist/session-*/` folders. Skip any that already contain a `.done` file.
-   Process the rest oldest-first.
+1. **Find work.** List `.sluglist/session-*/` folders. If `.sluglist/` does not exist but a legacy
+   `.snaglist/` does (the pre-rename folder name), use that folder instead and add a "legacy folder
+   name (`.snaglist/`)" line to your `.done` report. Skip any session that already contains a `.done`
+   file. Process the rest oldest-first.
 2. **Read the index.** Open `session.yaml` for the ordered list of issues and their `base_url`.
 3. **Per issue:**
    a. Read `NN-<slug>.md` — the comment is the primary signal; also note `selector`, `element_text`,
@@ -65,7 +69,7 @@ shows the state *after* action `NN`.
       (grep the codebase for the visible string), and `url` (map to the route/page/file). The
       `screen` field narrows the area.
    d. **Fix** the smallest change that resolves the report.
-4. **Report.** After handling a session, write `.snaglist/{session}/.done` — a short markdown report:
+4. **Report.** After handling a session, write `.sluglist/{session}/.done` — a short markdown report:
    per issue, `issue → file(s) touched → what you did` (or `needs clarification → why`).
 
 ## Rules
@@ -91,8 +95,8 @@ Copy this folder into the project's skills directory (or symlink it):
 
 ```bash
 mkdir -p .claude/skills
-cp -r node_modules/snaglist/skills/snaglist-fix .claude/skills/
+cp -r node_modules/sluglist/skills/sluglist-fix .claude/skills/
 ```
 
-Then run `npx snaglist dev` alongside your dev server, click feedback with the widget, and ask the
+Then run `npx sluglist dev` alongside your dev server, click feedback with the widget, and ask the
 agent to "fix feedback".

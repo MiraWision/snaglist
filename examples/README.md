@@ -1,4 +1,4 @@
-# snaglist examples
+# sluglist examples
 
 Copy-and-adapt reference code. These are **not** part of the published package (the `files` field
 ships only `dist`); they show how to deliver feedback safely in production.
@@ -13,12 +13,12 @@ ships only `dist`); they show how to deliver feedback safely in production.
 **Never put storage write-keys in the browser or a client connector.** A `FeedbackConnector` runs on
 the user's page; anything it holds is public. Keep credentials server-side, behind an endpoint like
 `feedback-route.ts`, and let the endpoint do the write. Rate-limiting and auth are the endpoint's
-job — snaglist core does neither by design.
+job — sluglist core does neither by design.
 
 Wire them together:
 
 ```ts
-import { createFeedbackWidget, mountFeedbackWidget } from "snaglist";
+import { createFeedbackWidget, mountFeedbackWidget } from "sluglist";
 import { HttpConnector } from "./HttpConnector";
 
 const widget = createFeedbackWidget({
