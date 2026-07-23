@@ -107,12 +107,44 @@ robots.txt all emitted to dist/
 Preview verification (vite dev at `/sluglist/`, node 20): 0 console errors; `#agents` DOM confirmed
 (3 steps, 2 terminals, `.done`); mobile fallback confirmed at 375px.
 
-## Pending (external — at checkpoint / post-approval)
+## Deploy + live checks ✅ (2026-07-23)
 
-- **npm** (2FA-gated, run by maintainer): un-deprecate `sluglist@">=1.0.0 <1.6.0"`, publish
-  `sluglist@1.6.0`, deprecate `snaglist` → "moved to sluglist". No unpublish.
-- **gh-pages deploy** of the new landing; then live `curl` checks (hero text + og tags + icons 200)
-  to be pasted here.
+Committed to `main` (`beb7bc7`, pushed to `MiraWision/sluglist`); `cd docs && npm run deploy` → gh-pages
+**Published**. Live `https://mirawision.github.io/sluglist/`:
+
+```
+$ curl -s https://mirawision.github.io/sluglist/
+<title>sluglist — visual feedback that your agent fixes</title>
+body contains: "Visual feedback, one line in."  "A drop-in widget for dev"  "npm install sluglist"
+og:title / og:url / og:image(og-image.png) / twitter:card=summary_large_image / canonical  → present
+
+$ curl -o/dev/null -w '%{http_code}' .../{favicon.ico,icon.svg,apple-touch-icon.png,og-image.png,robots.txt}
+200  200  200  200  200
+```
+
+(Old live title "snaglist — embeddable visual feedback widget" was replaced after the Pages rebuild.)
+
+## Pending — npm (2FA-gated, run by the maintainer)
+
+```bash
+npm deprecate sluglist@">=1.0.0 <1.6.0" "" --otp=<code>   # lift old deprecation
+npm publish --access public --otp=<code>                   # sluglist@1.6.0
+npm deprecate snaglist "This package moved to sluglist — npm install sluglist" --otp=<code>
+```
+Verify after: `npm view sluglist version` → 1.6.0 (no deprecation warning on install);
+`npm install snaglist` → deprecation pointer. **No unpublish** of either package.
+
+## Known tails (conscious)
+
+- `snaglist` strings intentionally remain in `src/cli/index.ts` (legacy-folder hint) and
+  `skills/sluglist-fix/SKILL.md` (`.snaglist/` fallback) — required by the compat feature — plus the
+  CHANGELOG/README-history/this-log history docs and the archived `evidence/` harnesses from prior
+  cycles. The `evidence/.snaglist/` session folders were `git mv`'d to `.sluglist/` to match the new
+  default.
+- Mobile-fallback flow "screens" are self-contained styled mocks (theme-aware, never 404), not captured
+  PNGs — a deliberate swap for robustness; the 3-step flow + "desktop-only" intent is preserved.
+- npm `sluglist` version jumps 1.1.1 → 1.6.0 (the 1.2–1.5 line shipped under `snaglist`); honest and
+  allowed by semver.
 
 ---
 ---
